@@ -5,6 +5,7 @@ using MudBlazor.Services;
 using OverALL.Components;
 using OverALL.Components.Account;
 using OverALL.Data;
+using OverALL.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -36,6 +37,11 @@ builder.Services.AddIdentityCore<ApplicationUser>(options => options.SignIn.Requ
     .AddEntityFrameworkStores<ApplicationDbContext>()
     .AddSignInManager()
     .AddDefaultTokenProviders();
+
+// Add custom services
+builder.Services.AddScoped<PdfProjectService>();
+builder.Services.AddScoped<PdfProcessingService>();
+builder.Services.AddScoped<PdfDocumentService>();
 
 builder.Services.AddSingleton<IEmailSender<ApplicationUser>, IdentityNoOpEmailSender>();
 

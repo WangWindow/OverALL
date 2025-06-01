@@ -1,53 +1,265 @@
 ﻿@page "/"
+@using OverALL.Data.Models
+@using OverALL.Services
+@using System.Security.Claims
+@inject PdfProjectService ProjectService
+@inject NavigationManager Navigation
 
-<PageTitle>Home</PageTitle>
+<PageTitle>PDF处理平台</PageTitle>
 
-<MudText Typo="Typo.h3" GutterBottom="true">Hello, world!</MudText>
-<MudText Class="mb-8">Welcome to your new app, powered by MudBlazor and the .NET 9 Template!</MudText>
+<MudContainer MaxWidth="MaxWidth.Large">
+    <MudText Typo="Typo.h3" GutterBottom="true" Class="text-center">
+        <MudIcon Icon="@Icons.Material.Filled.PictureAsPdf" Class="mr-3" Size="Size.Large"/>
+        PDF处理平台
+    </MudText>
+    <MudText Class="mb-8 text-center" Typo="Typo.h6" Color="Color.Secondary">
+        智能PDF文档处理，一键生成专业演示文稿
+    </MudText>
 
-<MudAlert Severity="Severity.Normal" ContentAlignment="HorizontalAlignment.Start">
-    You can find documentation and examples on our website here:
-    <MudLink Href="https://mudblazor.com" Target="_blank" Typo="Typo.body2" Color="Color.Primary">
-        <b>www.mudblazor.com</b>
-    </MudLink>
-</MudAlert>
+    <AuthorizeView>
+        <Authorized>
+            <!-- 用户已登录 - 显示项目概览 -->
+            <MudGrid>
+                <MudItem xs="12" md="8">
+                    <MudPaper Class="pa-6">
+                        <MudText Typo="Typo.h5" GutterBottom="true">
+                            <MudIcon Icon="@Icons.Material.Filled.Dashboard" Class="mr-2"/>
+                            项目概览
+                        </MudText>
+                        
+                        @if (_isLoading)
+                        {
+                            <MudProgressLinear Indeterminate="true" Class="my-4"/>
+                        }
+                        else if (_recentProjects.Any())
+                        {
+                            <MudGrid>
+                                @foreach (var project in _recentProjects.Take(3))
+                                {
+                                    <MudItem xs="12">
+                                        <MudCard Outlined="true" Class="cursor-pointer" @onclick="@(() => ViewProject(project.Id))">
+                                            <MudCardContent>
+                                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                                    <div>
+                                                        <MudText Typo="Typo.h6">@project.Name</MudText>
+                                                        <MudText Typo="Typo.body2" Color="Color.Secondary">
+                                                            @project.Documents.Count 个文档 • @project.CreatedAt.ToString("MM-dd")
+                                                        </MudText>
+                                                    </div>
+                                                    <MudChip T="string" Color="@GetStatusColor(project.Status)" Size="Size.Small">
+                                                        @GetStatusText(project.Status)
+                                                    </MudChip>
+                                                </div>
+                                            </MudCardContent>
+                                        </MudCard>
+                                    </MudItem>
+                                }
+                            </MudGrid>
+                            
+                            <div class="text-center mt-4">
+                                <MudButton Variant="Variant.Outlined" 
+                                           Color="Color.Primary"
+                                           OnClick="@(() => Navigation.NavigateTo("/projects"))">
+                                    查看所有项目
+                                </MudButton>
+                            </div>
+                        }
+                        else
+                        {
+                            <MudAlert Severity="Severity.Info">
+                                <MudText>还没有创建任何项目。</MudText>
+                                <MudButton StartIcon="@Icons.Material.Filled.Add" 
+                                           Color="Color.Primary" 
+                                           Variant="Variant.Text"
+                                           OnClick="@(() => Navigation.NavigateTo("/projects/create"))"
+                                           Class="mt-2">
+                                    创建第一个项目
+                                </MudButton>
+                            </MudAlert>
+                        }
+                    </MudPaper>
+                </MudItem>
 
-<br />
-<MudText Typo="Typo.h5" GutterBottom="true">Interactivity in this Template</MudText>
-<br />
-<MudText Typo="Typo.body2">
-    When you opt for the "Global" Interactivity Location, <br />
-    the render modes are defined in App.razor and consequently apply to all child components.<br />
-    In this case, providers are globally set in the MainLayout.<br />
-    <br />
-    On the other hand, if you choose the "Per page/component" Interactivity Location,<br />
-    it is necessary to include the <br />
-    <br />
-    &lt;MudPopoverProvider /&gt; <br />
-    &lt;MudDialogProvider /&gt; <br />
-    &lt;MudSnackbarProvider /&gt; <br />
-    <br />
-    components on every interactive page.<br />
-    <br />
-    If a render mode is not specified for a page, it defaults to Server-Side Rendering (SSR),<br />
-    similar to this page. While MudBlazor allows pages to be rendered in SSR,<br />
-    please note that interactive features, such as buttons and dropdown menus, will not be functional.
-</MudText>
+                <MudItem xs="12" md="4">
+                    <MudPaper Class="pa-6">
+                        <MudText Typo="Typo.h6" GutterBottom="true">
+                            <MudIcon Icon="@Icons.Material.Filled.TrendingUp" Class="mr-2"/>
+                            统计信息
+                        </MudText>
+                        
+                        @if (!_isLoading)
+                        {
+                            <MudList T="string" Dense="true">
+                                <MudListItem T="string" Icon="@Icons.Material.Filled.FolderOpen">
+                                    <div style="display: flex; justify-content: space-between; width: 100%;">
+                                        <MudText>总项目数</MudText>
+                                        <MudText><strong>@_statistics.TotalProjects</strong></MudText>
+                                    </div>
+                                </MudListItem>
+                                <MudListItem T="string" Icon="@Icons.Material.Filled.CheckCircle">
+                                    <div style="display: flex; justify-content: space-between; width: 100%;">
+                                        <MudText>已完成</MudText>
+                                        <MudText><strong>@_statistics.CompletedProjects</strong></MudText>
+                                    </div>
+                                </MudListItem>
+                                <MudListItem T="string" Icon="@Icons.Material.Filled.Psychology">
+                                    <div style="display: flex; justify-content: space-between; width: 100%;">
+                                        <MudText>处理中</MudText>
+                                        <MudText><strong>@_statistics.ProcessingProjects</strong></MudText>
+                                    </div>
+                                </MudListItem>
+                            </MudList>
+                        }
+                    </MudPaper>
+                </MudItem>
+            </MudGrid>
+        </Authorized>
+        <NotAuthorized>
+            <!-- 用户未登录 - 显示功能介绍 -->
+            <MudGrid>
+                <MudItem xs="12" md="6">
+                    <MudPaper Class="pa-6">
+                        <MudText Typo="Typo.h5" GutterBottom="true">
+                            <MudIcon Icon="@Icons.Material.Filled.AutoAwesome" Class="mr-2"/>
+                            智能处理流程
+                        </MudText>
+                        
+                        <MudList T="string" Dense="true">
+                            <MudListItem T="string" Icon="@Icons.Material.Filled.FileUpload">
+                                <div>
+                                    <MudText><strong>上传PDF文档</strong></MudText>
+                                    <MudText Typo="Typo.body2" Color="Color.Secondary">支持学术论文、研究报告等PDF格式</MudText>
+                                </div>
+                            </MudListItem>
+                            <MudListItem T="string" Icon="@Icons.Material.Filled.Analytics">
+                                <div>
+                                    <MudText><strong>智能解析</strong></MudText>
+                                    <MudText Typo="Typo.body2" Color="Color.Secondary">提取并格式化参考文献列表</MudText>
+                                </div>
+                            </MudListItem>
+                            <MudListItem T="string" Icon="@Icons.Material.Filled.Schema">
+                                <div>
+                                    <MudText><strong>内容结构化</strong></MudText>
+                                    <MudText Typo="Typo.body2" Color="Color.Secondary">AI分析内容，生成章节大纲</MudText>
+                                </div>
+                            </MudListItem>
+                            <MudListItem T="string" Icon="@Icons.Material.Filled.Slideshow">
+                                <div>
+                                    <MudText><strong>演示文稿生成</strong></MudText>
+                                    <MudText Typo="Typo.body2" Color="Color.Secondary">自动生成专业PPT和演讲备注</MudText>
+                                </div>
+                            </MudListItem>
+                        </MudList>
+                    </MudPaper>
+                </MudItem>
 
-<br />
-<MudText Typo="Typo.h5" GutterBottom="true">What's New in Blazor with the Release of .NET 9</MudText>
-<br />
+                <MudItem xs="12" md="6">
+                    <MudPaper Class="pa-6">
+                        <MudText Typo="Typo.h5" GutterBottom="true">
+                            <MudIcon Icon="@Icons.Material.Filled.Rocket" Class="mr-2"/>
+                            立即开始
+                        </MudText>
+                        
+                        <MudText Typo="Typo.body1" Class="mb-4">
+                            注册账户，开始您的PDF智能处理之旅
+                        </MudText>
+                        
+                        <MudStack Spacing="2">
+                            <MudButton Variant="Variant.Filled" 
+                                       Color="Color.Primary" 
+                                       FullWidth="true"
+                                       StartIcon="@Icons.Material.Filled.PersonAdd"
+                                       OnClick="@(() => Navigation.NavigateTo("/Account/Register"))">
+                                免费注册
+                            </MudButton>
+                            <MudButton Variant="Variant.Outlined" 
+                                       Color="Color.Primary" 
+                                       FullWidth="true"
+                                       StartIcon="@Icons.Material.Filled.Login"
+                                       OnClick="@(() => Navigation.NavigateTo("/Account/Login"))">
+                                用户登录
+                            </MudButton>
+                        </MudStack>
+                    </MudPaper>
+                </MudItem>
+            </MudGrid>
+        </NotAuthorized>
+    </AuthorizeView>
+</MudContainer>
 
-<MudText Typo="Typo.h6" GutterBottom="true">Prerendering</MudText>
-<MudText Typo="Typo.body2" GutterBottom="true">
-    If you're exploring the features of .NET 9 Blazor,<br /> you might be pleasantly surprised to learn that each page is prerendered on the server,<br /> regardless of the selected render mode.<br /><br />
-    This means that you'll need to inject all necessary services on the server,<br /> even when opting for the wasm (WebAssembly) render mode.<br /><br />
-    This prerendering functionality is crucial to ensuring that WebAssembly mode feels fast and responsive,<br /> especially when it comes to initial page load times.<br /><br />
-    For more information on how to detect prerendering and leverage the RenderContext, you can refer to the following link:
-    <MudLink Href="https://github.com/dotnet/aspnetcore/issues/51468#issuecomment-1783568121" Target="_blank" Typo="Typo.body2" Color="Color.Primary">
-        More details
-    </MudLink>
-</MudText>
+@code {
+    private List<PdfProject> _recentProjects = new();
+    private ProjectStatistics _statistics = new();
+    private bool _isLoading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthenticationStateTask;
+        if (authState.User.Identity?.IsAuthenticated == true)
+        {
+            await LoadUserData();
+        }
+        else
+        {
+            _isLoading = false;
+        }
+    }
+
+    private async Task LoadUserData()
+    {
+        try
+        {
+            var userId = GetCurrentUserId();
+            if (!string.IsNullOrEmpty(userId))
+            {
+                var allProjects = await ProjectService.GetUserProjectsAsync(userId);
+                _recentProjects = allProjects.Take(5).ToList();
+                _statistics = await ProjectService.GetProjectStatisticsAsync(userId);
+            }
+        }
+        catch (Exception)
+        {
+            // 静默处理错误，避免影响首页加载
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private string GetCurrentUserId()
+    {
+        var authState = Task.Run(async () => await AuthenticationStateTask).Result;
+        return authState.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? string.Empty;
+    }
+
+    private void ViewProject(int projectId)
+    {
+        Navigation.NavigateTo($"/projects/{projectId}");
+    }
+
+    private Color GetStatusColor(ProjectStatus status) => status switch
+    {
+        ProjectStatus.Created => Color.Default,
+        ProjectStatus.Processing => Color.Warning,
+        ProjectStatus.Completed => Color.Success,
+        ProjectStatus.Failed => Color.Error,
+        ProjectStatus.Cancelled => Color.Secondary,
+        _ => Color.Default
+    };
+
+    private string GetStatusText(ProjectStatus status) => status switch
+    {
+        ProjectStatus.Created => "已创建",
+        ProjectStatus.Processing => "处理中",
+        ProjectStatus.Completed => "已完成",
+        ProjectStatus.Failed => "失败",
+        ProjectStatus.Cancelled => "已取消",
+        _ => "未知"
+    };
+
+    [CascadingParameter] private Task<AuthenticationState> AuthenticationStateTask { get; set; } = default!;
+}
 
 <br />
 <MudText Typo="Typo.h6" GutterBottom="true">InteractiveAuto</MudText>
