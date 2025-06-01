@@ -52,7 +52,7 @@ public class PdfDocumentService
 
         document.Status = status;
         await _context.SaveChangesAsync();
-        
+
         _logger.LogInformation("Updated document {DocumentId} status to {Status}", documentId, status);
         return true;
     }
@@ -69,9 +69,9 @@ public class PdfDocumentService
         document.StructuredContent = structuredContent;
         document.References = references;
         document.Status = DocumentStatus.Analyzed;
-        
+
         await _context.SaveChangesAsync();
-        
+
         _logger.LogInformation("Updated document {DocumentId} content", documentId);
         return true;
     }
@@ -101,7 +101,7 @@ public class PdfDocumentService
         // 删除数据库记录
         _context.PdfDocuments.Remove(document);
         await _context.SaveChangesAsync();
-        
+
         _logger.LogInformation("Deleted document {DocumentId}", documentId);
         return true;
     }

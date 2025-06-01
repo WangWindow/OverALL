@@ -8,45 +8,45 @@ namespace OverALL.Data.Models;
 public class PdfDocument
 {
     public int Id { get; set; }
-    
+
     [Required]
     [MaxLength(200)]
     public string FileName { get; set; } = string.Empty;
-    
+
     [Required]
     [MaxLength(500)]
     public string FilePath { get; set; } = string.Empty;
-    
+
     /// <summary>
     /// 文件大小（字节）
     /// </summary>
     public long FileSize { get; set; }
-    
+
     /// <summary>
     /// 上传时间
     /// </summary>
     public DateTime UploadedAt { get; set; } = DateTime.UtcNow;
-    
+
     /// <summary>
     /// 文档状态
     /// </summary>
     public DocumentStatus Status { get; set; } = DocumentStatus.Uploaded;
-    
+
     /// <summary>
     /// 结构化内容（文献解析结果）
     /// </summary>
     public string? StructuredContent { get; set; }
-    
+
     /// <summary>
     /// 参考文献列表
     /// </summary>
     public string? References { get; set; }
-    
+
     /// <summary>
     /// 所属项目ID
     /// </summary>
     public int ProjectId { get; set; }
-    
+
     /// <summary>
     /// 所属项目
     /// </summary>

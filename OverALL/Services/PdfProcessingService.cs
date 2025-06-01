@@ -1,7 +1,7 @@
+using System.Diagnostics;
 using Microsoft.EntityFrameworkCore;
 using OverALL.Data;
 using OverALL.Data.Models;
-using System.Diagnostics;
 
 namespace OverALL.Services;
 
@@ -96,7 +96,7 @@ public class PdfProcessingService
             // 步骤1: 文献解析模块
             await ProcessDocumentAnalysisAsync(projectId);
 
-            // 步骤2: 文献获取模块  
+            // 步骤2: 文献获取模块
             await ProcessReferenceExtractionAsync(projectId);
 
             // 步骤7: 备注生成模块（如果Python同事已完成）
@@ -123,10 +123,10 @@ public class PdfProcessingService
     private async Task ProcessDocumentAnalysisAsync(int projectId)
     {
         await RecordProcessingStepAsync(projectId, "文献解析", "开始解析PDF文档结构");
-        
+
         // TODO: 调用Python脚本或实现C#版本
         // 这里可以调用Python同事的实现
-        
+
         await Task.Delay(2000); // 模拟处理时间
         await RecordProcessingStepAsync(projectId, "文献解析", "PDF文档解析完成，生成结构化内容");
     }
@@ -137,9 +137,9 @@ public class PdfProcessingService
     private async Task ProcessReferenceExtractionAsync(int projectId)
     {
         await RecordProcessingStepAsync(projectId, "文献获取", "开始提取参考文献");
-        
+
         // TODO: 调用Python脚本或实现C#版本
-        
+
         await Task.Delay(1500); // 模拟处理时间
         await RecordProcessingStepAsync(projectId, "文献获取", "参考文献提取完成");
     }
@@ -150,9 +150,9 @@ public class PdfProcessingService
     private async Task ProcessNotesGenerationAsync(int projectId)
     {
         await RecordProcessingStepAsync(projectId, "备注生成", "开始生成演示文稿备注");
-        
+
         // TODO: 调用Python同事的实现
-        
+
         await Task.Delay(3000); // 模拟处理时间
         await RecordProcessingStepAsync(projectId, "备注生成", "PPT备注生成完成");
     }
@@ -181,7 +181,7 @@ public class PdfProcessingService
 
             var output = await process.StandardOutput.ReadToEndAsync();
             var error = await process.StandardError.ReadToEndAsync();
-            
+
             await process.WaitForExitAsync();
 
             if (process.ExitCode != 0)

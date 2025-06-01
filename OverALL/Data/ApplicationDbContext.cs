@@ -22,13 +22,13 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
             entity.Property(e => e.Name).IsRequired().HasMaxLength(200);
             entity.Property(e => e.ProjectFolder).IsRequired().HasMaxLength(500);
             entity.Property(e => e.UserId).IsRequired();
-            
+
             // 配置与用户的关系
             entity.HasOne(e => e.User)
                   .WithMany()
                   .HasForeignKey(e => e.UserId)
                   .OnDelete(DeleteBehavior.Cascade);
-                  
+
             // 配置索引
             entity.HasIndex(e => e.UserId);
             entity.HasIndex(e => e.CreatedAt);
@@ -40,13 +40,13 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
             entity.HasKey(e => e.Id);
             entity.Property(e => e.FileName).IsRequired().HasMaxLength(200);
             entity.Property(e => e.FilePath).IsRequired().HasMaxLength(500);
-            
+
             // 配置与项目的关系
             entity.HasOne(e => e.Project)
                   .WithMany(e => e.Documents)
                   .HasForeignKey(e => e.ProjectId)
                   .OnDelete(DeleteBehavior.Cascade);
-                  
+
             entity.HasIndex(e => e.ProjectId);
         });
 
@@ -55,13 +55,13 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
         {
             entity.HasKey(e => e.Id);
             entity.Property(e => e.StepName).IsRequired().HasMaxLength(100);
-            
+
             // 配置与项目的关系
             entity.HasOne(e => e.Project)
                   .WithMany(e => e.ProcessingSteps)
                   .HasForeignKey(e => e.ProjectId)
                   .OnDelete(DeleteBehavior.Cascade);
-                  
+
             entity.HasIndex(e => e.ProjectId);
             entity.HasIndex(e => e.StartedAt);
         });
@@ -72,13 +72,13 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
             entity.HasKey(e => e.Id);
             entity.Property(e => e.FileName).IsRequired().HasMaxLength(200);
             entity.Property(e => e.FilePath).IsRequired().HasMaxLength(500);
-            
+
             // 配置与项目的关系
             entity.HasOne(e => e.Project)
                   .WithMany(e => e.GeneratedPpts)
                   .HasForeignKey(e => e.ProjectId)
                   .OnDelete(DeleteBehavior.Cascade);
-                  
+
             entity.HasIndex(e => e.ProjectId);
         });
     }

@@ -8,59 +8,59 @@ namespace OverALL.Data.Models;
 public class ProcessingStep
 {
     public int Id { get; set; }
-      /// <summary>
+    /// <summary>
     /// 步骤名称
     /// </summary>
     [Required]
     [MaxLength(100)]
     public string StepName { get; set; } = string.Empty;
-    
+
     /// <summary>
     /// 步骤描述
     /// </summary>
     [MaxLength(500)]
     public string? Description { get; set; }
-    
+
     /// <summary>
     /// 步骤类型
     /// </summary>
     public StepType Type { get; set; }
-    
+
     /// <summary>
     /// 步骤状态
     /// </summary>
     public StepStatus Status { get; set; } = StepStatus.Pending;
-    
+
     /// <summary>
     /// 开始时间
     /// </summary>
     public DateTime? StartedAt { get; set; }
-    
+
     /// <summary>
     /// 完成时间
     /// </summary>
     public DateTime? CompletedAt { get; set; }
-    
+
     /// <summary>
     /// 输入数据
     /// </summary>
     public string? Input { get; set; }
-    
+
     /// <summary>
     /// 输出结果
     /// </summary>
     public string? Output { get; set; }
-    
+
     /// <summary>
     /// 错误信息
     /// </summary>
     public string? ErrorMessage { get; set; }
-    
+
     /// <summary>
     /// 所属项目ID
     /// </summary>
     public int ProjectId { get; set; }
-    
+
     /// <summary>
     /// 所属项目
     /// </summary>

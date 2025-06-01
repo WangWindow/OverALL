@@ -4,22 +4,22 @@
 
 <MudNavMenu>
     <MudNavLink Href="" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Home">首页</MudNavLink>
-    
+
     <AuthorizeView>
         <Authorized>
             <MudNavGroup Text="PDF项目" Icon="@Icons.Material.Filled.FolderOpen" Expanded="true">
                 <MudNavLink Href="projects" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Dashboard">项目管理</MudNavLink>
                 <MudNavLink Href="projects/create" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Add">创建项目</MudNavLink>
             </MudNavGroup>
-            
+
             <MudNavLink Href="processing" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Psychology">处理中心</MudNavLink>
         </Authorized>
     </AuthorizeView>
-    
+
     <MudNavLink Href="counter" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Add">Counter</MudNavLink>
     <MudNavLink Href="weather" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.List">Weather</MudNavLink>
     <MudNavLink Href="auth" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Lock">Auth Required</MudNavLink>
-    
+
     <AuthorizeView>
         <Authorized>
             <MudNavLink Href="Account/Manage" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Person">@context.User.Identity?.Name</MudNavLink>
@@ -59,4 +59,3 @@
         NavigationManager.LocationChanged -= OnLocationChanged;
     }
 }
-

@@ -9,56 +9,56 @@ namespace OverALL.Data.Models;
 public class PdfProject
 {
     public int Id { get; set; }
-    
+
     [Required]
     [MaxLength(200)]
     public string Name { get; set; } = string.Empty;
-    
+
     [MaxLength(1000)]
     public string? Description { get; set; }
-    
+
     /// <summary>
     /// 项目存储文件夹路径
     /// </summary>
     [Required]
     public string ProjectFolder { get; set; } = string.Empty;
-    
+
     /// <summary>
     /// 项目状态
     /// </summary>
     public ProjectStatus Status { get; set; } = ProjectStatus.Created;
-    
+
     /// <summary>
     /// 创建时间
     /// </summary>
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-    
+
     /// <summary>
     /// 更新时间
     /// </summary>
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
-    
+
     /// <summary>
     /// 所属用户ID
     /// </summary>
     [Required]
     public string UserId { get; set; } = string.Empty;
-    
+
     /// <summary>
     /// 所属用户
     /// </summary>
     public ApplicationUser User { get; set; } = null!;
-    
+
     /// <summary>
     /// 项目包含的PDF文档
     /// </summary>
     public ICollection<PdfDocument> Documents { get; set; } = new List<PdfDocument>();
-    
+
     /// <summary>
     /// 处理步骤记录
     /// </summary>
     public ICollection<ProcessingStep> ProcessingSteps { get; set; } = new List<ProcessingStep>();
-    
+
     /// <summary>
     /// 生成的PPT文件
     /// </summary>

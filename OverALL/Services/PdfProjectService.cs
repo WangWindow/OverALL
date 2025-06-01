@@ -1,7 +1,7 @@
+using System.Security.Claims;
 using Microsoft.EntityFrameworkCore;
 using OverALL.Data;
 using OverALL.Data.Models;
-using System.Security.Claims;
 
 namespace OverALL.Services;
 
@@ -32,10 +32,10 @@ public class PdfProjectService
         // 生成项目文件夹路径
         var projectId = Guid.NewGuid().ToString("N");
         var projectFolder = Path.Combine(_environment.ContentRootPath, "ProjectFiles", projectId);
-        
+
         // 创建文件夹
         Directory.CreateDirectory(projectFolder);
-        
+
         var project = new PdfProject
         {
             Name = name,
@@ -49,7 +49,7 @@ public class PdfProjectService
 
         _context.PdfProjects.Add(project);
         await _context.SaveChangesAsync();
-        
+
         _logger.LogInformation("Created project {ProjectId} for user {UserId}", project.Id, userId);
         return project;
     }
@@ -94,9 +94,9 @@ public class PdfProjectService
 
         project.Status = status;
         project.UpdatedAt = DateTime.UtcNow;
-        
+
         await _context.SaveChangesAsync();
-        
+
         _logger.LogInformation("Updated project {ProjectId} status to {Status}", projectId, status);
         return true;
     }
@@ -128,7 +128,7 @@ public class PdfProjectService
         // 删除数据库记录
         _context.PdfProjects.Remove(project);
         await _context.SaveChangesAsync();
-        
+
         _logger.LogInformation("Deleted project {ProjectId}", projectId);
         return true;
     }

@@ -26,7 +26,7 @@
                             <MudIcon Icon="@Icons.Material.Filled.Dashboard" Class="mr-2"/>
                             项目概览
                         </MudText>
-                        
+
                         @if (_isLoading)
                         {
                             <MudProgressLinear Indeterminate="true" Class="my-4"/>
@@ -55,9 +55,9 @@
                                     </MudItem>
                                 }
                             </MudGrid>
-                            
+
                             <div class="text-center mt-4">
-                                <MudButton Variant="Variant.Outlined" 
+                                <MudButton Variant="Variant.Outlined"
                                            Color="Color.Primary"
                                            OnClick="@(() => Navigation.NavigateTo("/projects"))">
                                     查看所有项目
@@ -68,8 +68,8 @@
                         {
                             <MudAlert Severity="Severity.Info">
                                 <MudText>还没有创建任何项目。</MudText>
-                                <MudButton StartIcon="@Icons.Material.Filled.Add" 
-                                           Color="Color.Primary" 
+                                <MudButton StartIcon="@Icons.Material.Filled.Add"
+                                           Color="Color.Primary"
                                            Variant="Variant.Text"
                                            OnClick="@(() => Navigation.NavigateTo("/projects/create"))"
                                            Class="mt-2">
@@ -86,7 +86,7 @@
                             <MudIcon Icon="@Icons.Material.Filled.TrendingUp" Class="mr-2"/>
                             统计信息
                         </MudText>
-                        
+
                         @if (!_isLoading)
                         {
                             <MudList T="string" Dense="true">
@@ -123,7 +123,7 @@
                             <MudIcon Icon="@Icons.Material.Filled.AutoAwesome" Class="mr-2"/>
                             智能处理流程
                         </MudText>
-                        
+
                         <MudList T="string" Dense="true">
                             <MudListItem T="string" Icon="@Icons.Material.Filled.FileUpload">
                                 <div>
@@ -159,21 +159,21 @@
                             <MudIcon Icon="@Icons.Material.Filled.Rocket" Class="mr-2"/>
                             立即开始
                         </MudText>
-                        
+
                         <MudText Typo="Typo.body1" Class="mb-4">
                             注册账户，开始您的PDF智能处理之旅
                         </MudText>
-                        
+
                         <MudStack Spacing="2">
-                            <MudButton Variant="Variant.Filled" 
-                                       Color="Color.Primary" 
+                            <MudButton Variant="Variant.Filled"
+                                       Color="Color.Primary"
                                        FullWidth="true"
                                        StartIcon="@Icons.Material.Filled.PersonAdd"
                                        OnClick="@(() => Navigation.NavigateTo("/Account/Register"))">
                                 免费注册
                             </MudButton>
-                            <MudButton Variant="Variant.Outlined" 
-                                       Color="Color.Primary" 
+                            <MudButton Variant="Variant.Outlined"
+                                       Color="Color.Primary"
                                        FullWidth="true"
                                        StartIcon="@Icons.Material.Filled.Login"
                                        OnClick="@(() => Navigation.NavigateTo("/Account/Login"))">
