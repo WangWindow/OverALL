@@ -9,6 +9,8 @@ using OverALL.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.AddServiceDefaults();
+
 // Add MudBlazor services
 builder.Services.AddMudServices();
 
@@ -46,6 +48,8 @@ builder.Services.AddScoped<PdfDocumentService>();
 builder.Services.AddSingleton<IEmailSender<ApplicationUser>, IdentityNoOpEmailSender>();
 
 var app = builder.Build();
+
+app.MapDefaultEndpoints();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())

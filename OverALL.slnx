@@ -1,3 +1,5 @@
 <Solution>
+  <Project Path="OverALL.AppHost/OverALL.AppHost.csproj" Id="3ceb1963-b239-40dd-9a23-76082abc8ac7" />
+  <Project Path="OverALL.ServiceDefaults/OverALL.ServiceDefaults.csproj" />
   <Project Path="OverALL/OverALL.csproj" />
 </Solution>
