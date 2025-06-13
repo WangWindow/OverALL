@@ -1,0 +1,451 @@
+@page "/projects/{projectId:int}"
+@using OverALL.Data.Models
+@using OverALL.Services
+@using Microsoft.AspNetCore.Authorization
+@using System.Security.Claims
+@attribute [Authorize]
+@inject PdfProjectService ProjectService
+@inject PdfProcessingService ProcessingService
+@inject PdfDocumentService DocumentService
+@inject NavigationManager Navigation
+@inject ISnackbar Snackbar
+@inject IDialogService DialogService
+@inject IJSRuntime JSRuntime
+
+<PageTitle>项目详情</PageTitle>
+
+@if (_isLoading)
+{
+    <MudProgressLinear Indeterminate="true"/>
+    <MudText Align="Align.Center" Class="my-4">加载项目信息中...</MudText>
+}
+else if (_project == null)
+{
+    <MudAlert Severity="Severity.Error">
+        项目不存在或您没有访问权限。
+    </MudAlert>
+}
+else
+{
+    <div class="d-flex justify-space-between align-center mb-4">
+        <div>
+            <MudText Typo="Typo.h4">@_project.Name</MudText>
+            @if (!string.IsNullOrWhiteSpace(_project.Description))
+            {
+                <MudText Typo="Typo.body1" Color="Color.Secondary">@_project.Description</MudText>
+            }
+        </div>        <div class="d-flex gap-2">
+            <MudChip T="string" Color="@GetStatusColor(_project.Status)">
+                @GetStatusText(_project.Status)
+            </MudChip>
+        </div>
+    </div>
+
+    <MudTabs Elevation="2" Rounded="true" ApplyEffectsToContainer="true" PanelClass="pa-6">
+        <!-- 文档管理 -->
+        <MudTabPanel Text="文档管理" Icon="@Icons.Material.Filled.Description">
+            <div class="d-flex justify-space-between align-center mb-4">
+                <MudText Typo="Typo.h6">PDF文档</MudText>
+                <MudFileUpload T="IFormFile" Accept=".pdf" FilesChanged="UploadFiles" MaximumFileCount="10">
+                    <ActivatorContent>
+                        <MudButton Variant="Variant.Filled"
+                                   Color="Color.Primary"
+                                   StartIcon="@Icons.Material.Filled.CloudUpload"
+                                   Disabled="@_isUploading">
+                            @if (_isUploading)
+                            {
+                                <MudProgressCircular Class="ms-n1" Size="Size.Small" Indeterminate="true"/>
+                                <MudText Class="ms-2">上传中...</MudText>
+                            }
+                            else
+                            {
+                                <MudText>上传PDF</MudText>
+                            }
+                        </MudButton>
+                    </ActivatorContent>
+                </MudFileUpload>
+            </div>
+
+            @if (_project.Documents.Any())
+            {
+                <MudTable Items="@_project.Documents" Dense="true" Hover="true">
+                    <HeaderContent>
+                        <MudTh>文件名</MudTh>
+                        <MudTh>大小</MudTh>
+                        <MudTh>状态</MudTh>
+                        <MudTh>上传时间</MudTh>
+                        <MudTh>操作</MudTh>
+                    </HeaderContent>
+                    <RowTemplate>
+                        <MudTd DataLabel="文件名">@context.FileName</MudTd>
+                        <MudTd DataLabel="大小">@FormatFileSize(context.FileSize)</MudTd>                        <MudTd DataLabel="状态">
+                            <MudChip T="string" Color="@GetDocumentStatusColor(context.Status)" Size="Size.Small">
+                                @GetDocumentStatusText(context.Status)
+                            </MudChip>
+                        </MudTd>
+                        <MudTd DataLabel="上传时间">@context.UploadedAt.ToString("yyyy-MM-dd HH:mm")</MudTd>
+                        <MudTd DataLabel="操作">
+                            <MudIconButton Icon="@Icons.Material.Filled.Download"
+                                           Color="Color.Primary"
+                                           Size="Size.Small"
+                                           OnClick="@(() => DownloadDocument(context))"
+                                           title="下载"/>
+                            <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                                           Color="Color.Error"
+                                           Size="Size.Small"
+                                           OnClick="@(() => DeleteDocument(context))"
+                                           title="删除"/>
+                        </MudTd>
+                    </RowTemplate>
+                </MudTable>
+            }
+            else
+            {
+                <MudAlert Severity="Severity.Info">
+                    还没有上传任何PDF文档。请点击上方的"上传PDF"按钮开始。
+                </MudAlert>
+            }
+        </MudTabPanel>
+
+        <!-- 处理进度 -->
+        <MudTabPanel Text="处理进度" Icon="@Icons.Material.Filled.Timeline">
+            <div class="d-flex justify-space-between align-center mb-4">
+                <MudText Typo="Typo.h6">处理流程</MudText>
+                @if (_project.Status == ProjectStatus.Created && _project.Documents.Any())
+                {
+                    <MudButton Variant="Variant.Filled"
+                               Color="Color.Success"
+                               StartIcon="@Icons.Material.Filled.PlayArrow"
+                               OnClick="@StartProcessing"
+                               Disabled="@_isProcessing">
+                        @if (_isProcessing)
+                        {
+                            <MudProgressCircular Class="ms-n1" Size="Size.Small" Indeterminate="true"/>
+                            <MudText Class="ms-2">启动中...</MudText>
+                        }
+                        else
+                        {
+                            <MudText>开始处理</MudText>
+                        }
+                    </MudButton>
+                }
+            </div>
+
+            @if (_processingProgress != null)
+            {
+                <MudProgressLinear Value="@_processingProgress.Progress" Class="mb-4"/>
+                <MudText Typo="Typo.body1" Class="mb-4">
+                    当前进度: @_processingProgress.Progress% - @_processingProgress.CurrentStep
+                </MudText>
+
+                @if (_processingProgress.ProcessingSteps.Any())
+                {
+                    <MudTimeline TimelinePosition="TimelinePosition.Start">
+                        @foreach (var step in _processingProgress.ProcessingSteps)
+                        {
+                            <MudTimelineItem Color="@GetStepColor(step.Status)"
+                                             Icon="@GetStepIcon(step.Status)"
+                                             TimelineAlign="TimelineAlign.Start">
+                                <MudCard>
+                                    <MudCardContent>
+                                        <MudText Typo="Typo.h6">@step.StepName</MudText>
+                                        @if (!string.IsNullOrWhiteSpace(step.Description))
+                                        {
+                                            <MudText Typo="Typo.body2">@step.Description</MudText>
+                                        }
+                                        <MudText Typo="Typo.caption" Color="Color.Secondary">
+                                            @step.StartedAt?.ToString("yyyy-MM-dd HH:mm:ss")
+                                        </MudText>
+                                    </MudCardContent>
+                                </MudCard>
+                            </MudTimelineItem>
+                        }
+                    </MudTimeline>
+                }
+            }
+            else
+            {
+                <MudAlert Severity="Severity.Info">
+                    处理流程还未开始。请先上传PDF文档，然后点击"开始处理"。
+                </MudAlert>
+            }
+        </MudTabPanel>
+
+        <!-- 生成结果 -->
+        <MudTabPanel Text="生成结果" Icon="@Icons.Material.Filled.Slideshow">
+            @if (_project.GeneratedPpts.Any())
+            {
+                <MudGrid>
+                    @foreach (var ppt in _project.GeneratedPpts)
+                    {
+                        <MudItem xs="12" sm="6" md="4">
+                            <MudCard>
+                                <MudCardContent>
+                                    <div class="d-flex align-center mb-2">
+                                        <MudIcon Icon="@Icons.Material.Filled.Slideshow" Color="Color.Primary" Class="mr-2"/>
+                                        <MudText Typo="Typo.h6">@ppt.FileName</MudText>
+                                    </div>
+                                    <MudText Typo="Typo.body2" Color="Color.Secondary">
+                                        幻灯片数: @ppt.SlideCount
+                                    </MudText>
+                                    <MudText Typo="Typo.body2" Color="Color.Secondary">
+                                        生成时间: @ppt.GeneratedAt.ToString("yyyy-MM-dd HH:mm")
+                                    </MudText>
+                                    <MudText Typo="Typo.body2" Color="Color.Secondary">
+                                        大小: @FormatFileSize(ppt.FileSize)
+                                    </MudText>
+                                </MudCardContent>
+                                <MudCardActions>
+                                    <MudButton StartIcon="@Icons.Material.Filled.Download"
+                                               Color="Color.Primary"
+                                               OnClick="@(() => DownloadPpt(ppt))">
+                                        下载
+                                    </MudButton>
+                                    <MudButton StartIcon="@Icons.Material.Filled.Preview"
+                                               Color="Color.Default"
+                                               OnClick="@(() => PreviewPpt(ppt))">
+                                        预览
+                                    </MudButton>
+                                </MudCardActions>
+                            </MudCard>
+                        </MudItem>
+                    }
+                </MudGrid>
+            }
+            else
+            {
+                <MudAlert Severity="Severity.Info">
+                    还没有生成任何PPT文件。请完成PDF处理流程后查看结果。
+                </MudAlert>
+            }
+        </MudTabPanel>
+    </MudTabs>
+}
+
+@code {
+    [Parameter] public int ProjectId { get; set; }
+
+    private PdfProject? _project;
+    private ProcessingProgress? _processingProgress;
+    private bool _isLoading = true;
+    private bool _isUploading = false;
+    private bool _isProcessing = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadProject();
+        await LoadProcessingProgress();
+    }
+
+    private async Task LoadProject()
+    {
+        try
+        {
+            _isLoading = true;
+            var userId = GetCurrentUserId();
+            _project = await ProjectService.GetProjectByIdAsync(ProjectId, userId);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"加载项目失败: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private async Task LoadProcessingProgress()
+    {
+        if (_project == null) return;
+
+        try
+        {
+            var userId = GetCurrentUserId();
+            _processingProgress = await ProcessingService.GetProcessingProgressAsync(ProjectId, userId);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"加载处理进度失败: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private async Task UploadFiles(IFormFile file)
+    {
+        if (_project == null || file == null) return;
+
+        try
+        {
+            _isUploading = true;
+            var userId = GetCurrentUserId();
+            await ProcessingService.UploadPdfAsync(ProjectId, userId, file);
+
+            Snackbar.Add($"文件 {file.FileName} 上传成功！", Severity.Success);
+            await LoadProject(); // 重新加载项目数据
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"上传失败: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _isUploading = false;
+        }
+    }
+
+    private async Task StartProcessing()
+    {
+        if (_project == null) return;
+
+        try
+        {
+            _isProcessing = true;
+            var userId = GetCurrentUserId();
+            var success = await ProcessingService.StartPdfProcessingAsync(ProjectId, userId);
+
+            if (success)
+            {
+                Snackbar.Add("处理流程已启动！", Severity.Success);
+                await LoadProject();
+                await LoadProcessingProgress();
+            }
+            else
+            {
+                Snackbar.Add("启动处理失败", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"启动处理时发生错误: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _isProcessing = false;
+        }
+    }
+
+    private async Task DeleteDocument(PdfDocument document)
+    {
+        var result = await DialogService.ShowMessageBox(
+            "确认删除",
+            $"确定要删除文档 '{document.FileName}' 吗？",
+            yesText: "删除",
+            cancelText: "取消");
+
+        if (result == true)
+        {
+            try
+            {
+                var success = await DocumentService.DeleteDocumentAsync(document.Id);
+                if (success)
+                {
+                    Snackbar.Add("文档删除成功", Severity.Success);
+                    await LoadProject();
+                }
+                else
+                {
+                    Snackbar.Add("删除文档失败", Severity.Error);
+                }
+            }
+            catch (Exception ex)
+            {
+                Snackbar.Add($"删除文档时发生错误: {ex.Message}", Severity.Error);
+            }
+        }
+    }
+
+    private async Task DownloadDocument(PdfDocument document)
+    {
+        // TODO: 实现文档下载
+        Snackbar.Add("下载功能正在开发中", Severity.Info);
+    }
+
+    private async Task DownloadPpt(GeneratedPpt ppt)
+    {
+        // TODO: 实现PPT下载
+        Snackbar.Add("下载功能正在开发中", Severity.Info);
+    }
+
+    private async Task PreviewPpt(GeneratedPpt ppt)
+    {
+        // TODO: 实现PPT预览
+        Snackbar.Add("预览功能正在开发中", Severity.Info);
+    }    // 辅助方法
+    private string GetCurrentUserId()
+    {
+        var authState = Task.Run(async () => await AuthenticationStateTask).Result;
+        return authState.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? string.Empty;
+    }
+
+    private Color GetStatusColor(ProjectStatus status) => status switch
+    {
+        ProjectStatus.Created => Color.Default,
+        ProjectStatus.Processing => Color.Warning,
+        ProjectStatus.Completed => Color.Success,
+        ProjectStatus.Failed => Color.Error,
+        ProjectStatus.Cancelled => Color.Secondary,
+        _ => Color.Default
+    };
+
+    private string GetStatusText(ProjectStatus status) => status switch
+    {
+        ProjectStatus.Created => "已创建",
+        ProjectStatus.Processing => "处理中",
+        ProjectStatus.Completed => "已完成",
+        ProjectStatus.Failed => "失败",
+        ProjectStatus.Cancelled => "已取消",
+        _ => "未知"
+    };
+
+    private Color GetDocumentStatusColor(DocumentStatus status) => status switch
+    {
+        DocumentStatus.Uploaded => Color.Default,
+        DocumentStatus.Analyzing => Color.Warning,
+        DocumentStatus.Analyzed => Color.Success,
+        DocumentStatus.Failed => Color.Error,
+        _ => Color.Default
+    };
+
+    private string GetDocumentStatusText(DocumentStatus status) => status switch
+    {
+        DocumentStatus.Uploaded => "已上传",
+        DocumentStatus.Analyzing => "分析中",
+        DocumentStatus.Analyzed => "已分析",
+        DocumentStatus.Failed => "分析失败",
+        _ => "未知"
+    };
+
+    private Color GetStepColor(StepStatus status) => status switch
+    {
+        StepStatus.Pending => Color.Default,
+        StepStatus.Running => Color.Warning,
+        StepStatus.Completed => Color.Success,
+        StepStatus.Failed => Color.Error,
+        StepStatus.Skipped => Color.Secondary,
+        _ => Color.Default
+    };
+
+    private string GetStepIcon(StepStatus status) => status switch
+    {
+        StepStatus.Pending => Icons.Material.Filled.Schedule,
+        StepStatus.Running => Icons.Material.Filled.Refresh,
+        StepStatus.Completed => Icons.Material.Filled.CheckCircle,
+        StepStatus.Failed => Icons.Material.Filled.Error,
+        StepStatus.Skipped => Icons.Material.Filled.SkipNext,
+        _ => Icons.Material.Filled.Help
+    };
+
+    private string FormatFileSize(long bytes)
+    {
+        string[] sizes = { "B", "KB", "MB", "GB" };
+        double len = bytes;
+        int order = 0;
+        while (len >= 1024 && order < sizes.Length - 1)
+        {
+            order++;
+            len = len / 1024;
+        }        return $"{len:0.##} {sizes[order]}";
+    }
+
+    [CascadingParameter] private Task<AuthenticationState> AuthenticationStateTask { get; set; } = default!;
+}
