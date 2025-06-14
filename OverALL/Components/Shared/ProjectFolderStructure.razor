@@ -1,0 +1,96 @@
+@using OverALL.Data.Models
+@using OverALL.Services
+@inject PdfProjectService ProjectService
+
+<MudCard>
+    <MudCardHeader>
+        <CardHeaderContent>
+            <MudText Typo="Typo.h6">
+                <MudIcon Icon="@Icons.Material.Filled.Folder" Class="mr-2" />
+                项目文件结构
+            </MudText>
+        </CardHeaderContent>
+    </MudCardHeader>
+    <MudCardContent>
+        @if (Project != null)
+        {            <MudTreeView T="string" ExpandOnClick="true">
+                <MudTreeViewItem T="string" Value="@Project.Name" Text="@Project.Name" Icon="@Icons.Material.Filled.FolderOpen" Expanded="true">
+                    <MudTreeViewItem T="string" Value="@("documents")" Text="Documents" Icon="@Icons.Material.Filled.Folder" Expanded="true">
+                        @foreach (var doc in Project.Documents)
+                        {
+                            <MudTreeViewItem T="string" Value="@doc.Id" Text="@doc.FileName" Icon="@Icons.Material.Filled.PictureAsPdf" />
+                        }
+                        @if (!Project.Documents.Any())
+                        {
+                            <MudTreeViewItem T="string" Value="@("empty-docs")" Text="(空文件夹)" Icon="@Icons.Material.Filled.FolderOff" />
+                        }
+                    </MudTreeViewItem>
+
+                    @if (Project.GeneratedPpts.Any())
+                    {
+                        <MudTreeViewItem T="string" Value="@("output")" Text="Generated PPT" Icon="@Icons.Material.Filled.Folder" Expanded="true">
+                            @foreach (var ppt in Project.GeneratedPpts)
+                            {
+                                <MudTreeViewItem T="string" Value="@ppt.Id" Text="@ppt.FileName" Icon="@Icons.Material.Filled.Slideshow" />
+                            }
+                        </MudTreeViewItem>
+                    }
+                </MudTreeViewItem>
+            </MudTreeView>
+
+            <MudDivider Class="my-4" />
+
+            <MudGrid>
+                <MudItem xs="6">
+                    <MudText Typo="Typo.body2" Color="Color.Secondary">
+                        <strong>项目路径:</strong>
+                    </MudText>
+                    <MudText Typo="Typo.body2" Class="font-family-monospace">
+                        @Project.ProjectFolder
+                    </MudText>
+                </MudItem>
+                <MudItem xs="6">
+                    <MudText Typo="Typo.body2" Color="Color.Secondary">
+                        <strong>文档数量:</strong>
+                    </MudText>
+                    <MudText Typo="Typo.body2">
+                        @Project.Documents.Count 个文件
+                    </MudText>
+                </MudItem>
+                <MudItem xs="6">
+                    <MudText Typo="Typo.body2" Color="Color.Secondary">
+                        <strong>总大小:</strong>
+                    </MudText>
+                    <MudText Typo="Typo.body2">
+                        @FormatFileSize(Project.Documents.Sum(d => d.FileSize))
+                    </MudText>
+                </MudItem>
+                <MudItem xs="6">
+                    <MudText Typo="Typo.body2" Color="Color.Secondary">
+                        <strong>创建时间:</strong>
+                    </MudText>
+                    <MudText Typo="Typo.body2">
+                        @Project.CreatedAt.ToString("yyyy-MM-dd HH:mm")
+                    </MudText>
+                </MudItem>
+            </MudGrid>
+        }
+    </MudCardContent>
+</MudCard>
+
+@code {
+    [Parameter] public PdfProject? Project { get; set; }
+
+    private string FormatFileSize(long bytes)
+    {
+        string[] sizes = { "B", "KB", "MB", "GB" };
+        double len = bytes;
+        int order = 0;
+        while (len >= 1024 && order < sizes.Length - 1)
+        {
+            order++;
+            len = len / 1024;
+        }
+        return $"{len:0.##} {sizes[order]}";
+    }
+}

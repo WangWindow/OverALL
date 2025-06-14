@@ -1,6 +1,7 @@
 @page "/projects/{projectId}"
 @using OverALL.Data.Models
 @using OverALL.Services
+@using OverALL.Components.Shared
 @using Microsoft.AspNetCore.Authorization
 @using System.Security.Claims
 @attribute [Authorize]
@@ -11,6 +12,7 @@
 @inject ISnackbar Snackbar
 @inject IDialogService DialogService
 @inject IJSRuntime JSRuntime
+@inject ILogger<ProjectDetail> Logger
 
 <PageTitle>项目详情</PageTitle>
 
@@ -44,26 +46,99 @@ else
 
     <MudTabs Elevation="2" Rounded="true" ApplyEffectsToContainer="true" PanelClass="pa-6">
         <!-- 文档管理 -->
-        <MudTabPanel Text="文档管理" Icon="@Icons.Material.Filled.Description">
-            <div class="d-flex justify-space-between align-center mb-4">
+        <MudTabPanel Text="文档管理" Icon="@Icons.Material.Filled.Description">            <div class="d-flex justify-space-between align-center mb-4">
                 <MudText Typo="Typo.h6">PDF文档</MudText>
-                <MudFileUpload T="IFormFile" Accept=".pdf" FilesChanged="UploadFiles" MaximumFileCount="10">
-                    <ActivatorContent>
-                        <MudButton Variant="Variant.Filled" Color="Color.Primary"
-                            StartIcon="@Icons.Material.Filled.CloudUpload" Disabled="@_isUploading">
-                            @if (_isUploading)
+                <div class="d-flex gap-2">
+                    <MudFileUpload T="IReadOnlyList<IFormFile>" Accept=".pdf" FilesChanged="UploadMultipleFiles" MaximumFileCount="10">
+                        <ActivatorContent>
+                            <MudButton Variant="Variant.Outlined" Color="Color.Primary"
+                                StartIcon="@Icons.Material.Filled.CloudUpload" Disabled="@_isUploading">
+                                批量上传
+                            </MudButton>
+                        </ActivatorContent>
+                    </MudFileUpload>
+                      <MudFileUpload T="IFormFile" Accept=".pdf" FilesChanged="UploadFiles" MaximumFileCount="1">
+                        <ActivatorContent>
+                            <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                                StartIcon="@Icons.Material.Filled.CloudUpload" Disabled="@_isUploading">
+                                @if (_isUploading)
+                                {
+                                    <MudProgressCircular Class="ms-n1" Size="Size.Small" Indeterminate="true" />
+                                    <MudText Class="ms-2">上传中...</MudText>
+                                }
+                                else
+                                {
+                                    <MudText>上传PDF</MudText>
+                                }
+                            </MudButton>
+                        </ActivatorContent>
+                        <SelectedTemplate>
+                            @if (context != null)
                             {
-                                <MudProgressCircular Class="ms-n1" Size="Size.Small" Indeterminate="true" />
-                                <MudText Class="ms-2">上传中...</MudText>
+                                <MudPaper Class="pa-2 mt-2" Outlined="true">
+                                    <MudText Typo="Typo.h6">@context.Name</MudText>
+                                    <MudText Typo="Typo.body2">@FormatFileSize(context.Length)</MudText>
+                                    @if (context.ContentType != "application/pdf" && !context.Name.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase))
+                                    {
+                                        <MudAlert Severity="Severity.Warning" Dense="true" Class="mt-2">
+                                            文件类型不正确，只支持PDF文件
+                                        </MudAlert>
+                                    }
+                                </MudPaper>
                             }
-                            else
-                            {
-                                <MudText>上传PDF</MudText>
-                            }
-                        </MudButton>
-                    </ActivatorContent>
-                </MudFileUpload>
+                        </SelectedTemplate>
+                    </MudFileUpload>
+                </div>
             </div>
+
+            @if (_uploadProgress > 0 && _uploadProgress < 100)
+            {
+                <MudProgressLinear Value="_uploadProgress" Class="mb-4" Color="Color.Primary" />
+                <MudText Typo="Typo.body2" Class="mb-4">上传进度: @_uploadProgress%</MudText>
+            }
+
+            @if (_batchUploadFiles?.Any() == true)
+            {
+                <MudPaper Class="pa-4 mb-4" Outlined="true">
+                    <MudText Typo="Typo.h6" Class="mb-2">待上传文件</MudText>
+                    @foreach (var file in _batchUploadFiles)
+                    {
+                        <MudCard Class="mb-2" Outlined="true">
+                            <MudCardContent Class="pa-2">
+                                <div class="d-flex justify-space-between align-center">                                    <div>
+                                        <MudText Typo="Typo.body1">@file.Name</MudText>
+                                        <MudText Typo="Typo.body2" Color="Color.Secondary">@FormatFileSize(file.Length)</MudText>
+                                    </div>
+                                    <div class="d-flex gap-2">                        @if (file.ContentType != "application/pdf" && !file.Name.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase))
+                                        {
+                                            <MudChip T="string" Size="Size.Small" Color="Color.Warning">
+                                                格式错误
+                                            </MudChip>
+                                        }
+                                        else
+                                        {
+                                            <MudChip T="string" Size="Size.Small" Color="Color.Success">
+                                                PDF
+                                            </MudChip>
+                                        }
+                                        <MudIconButton Icon="@Icons.Material.Filled.Remove" Size="Size.Small" Color="Color.Error"
+                                            OnClick="@(() => RemoveFileFromBatch(file))" title="移除" />
+                                    </div>
+                                </div>
+                            </MudCardContent>
+                        </MudCard>
+                    }
+                    <div class="d-flex gap-2 mt-2">                        <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                            OnClick="UploadBatchFiles" Disabled="@GetBatchUploadDisabled()">
+                            上传所有文件
+                        </MudButton>
+                        <MudButton Variant="Variant.Outlined" Color="Color.Secondary"
+                            OnClick="ClearBatchFiles" Disabled="@_isUploading">
+                            清空列表
+                        </MudButton>
+                    </div>
+                </MudPaper>
+            }
 
             @if (_project.Documents.Any())
             {
@@ -205,7 +280,11 @@ else
                 <MudAlert Severity="Severity.Info">
                     还没有生成任何PPT文件。请完成PDF处理流程后查看结果。
                 </MudAlert>
-            }
+            }        </MudTabPanel>
+
+        <!-- 文件结构 -->
+        <MudTabPanel Text="文件结构" Icon="@Icons.Material.Filled.AccountTree">
+            <ProjectFolderStructure Project="_project" />
         </MudTabPanel>
     </MudTabs>
 }
@@ -217,8 +296,9 @@ else
     private PdfProject? _project;
     private ProcessingProgress? _processingProgress;
     private bool _isLoading = true;
-    private bool _isUploading = false;
-    private bool _isProcessing = false;
+    private bool _isUploading = false;    private bool _isProcessing = false;
+    private int _uploadProgress = 0;
+    private IReadOnlyList<IFormFile>? _batchUploadFiles;
 
     protected override async Task OnInitializedAsync()
     {
@@ -257,28 +337,73 @@ else
         {
             Snackbar.Add($"加载处理进度失败: {ex.Message}", Severity.Error);
         }
-    }
-
-    private async Task UploadFiles(IFormFile file)
+    }    private async Task UploadFiles(IFormFile file)
     {
         if (_project == null || file == null) return;
+
+        // 验证文件
+        if (!file.ContentType.Equals("application/pdf", StringComparison.OrdinalIgnoreCase) &&
+            !file.FileName.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase))
+        {
+            Snackbar.Add("只支持PDF文件格式", Severity.Warning);
+            return;
+        }
+
+        const long maxFileSize = 50 * 1024 * 1024; // 50MB
+        if (file.Length > maxFileSize)
+        {
+            Snackbar.Add("文件大小不能超过50MB", Severity.Warning);
+            return;
+        }
+
+        if (file.Length == 0)
+        {
+            Snackbar.Add("文件不能为空", Severity.Warning);
+            return;
+        }
 
         try
         {
             _isUploading = true;
+            _uploadProgress = 0;
+            StateHasChanged();
+
             var userId = GetCurrentUserId();
+
+            // 模拟上传进度
+            for (int i = 0; i <= 90; i += 10)
+            {
+                _uploadProgress = i;
+                StateHasChanged();
+                await Task.Delay(100);
+            }
+
             await ProcessingService.UploadPdfAsync(ProjectId, userId, file);
+
+            _uploadProgress = 100;
+            StateHasChanged();
+            await Task.Delay(500);
 
             Snackbar.Add($"文件 {file.FileName} 上传成功！", Severity.Success);
             await LoadProject(); // 重新加载项目数据
         }
-        catch (Exception ex)
+        catch (ArgumentException ex)
+        {
+            Snackbar.Add($"上传失败: {ex.Message}", Severity.Warning);
+        }
+        catch (InvalidOperationException ex)
         {
             Snackbar.Add($"上传失败: {ex.Message}", Severity.Error);
         }
-        finally
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error uploading file {FileName}", file.FileName);
+            Snackbar.Add($"上传失败: 系统错误，请稍后重试", Severity.Error);
+        }        finally
         {
             _isUploading = false;
+            _uploadProgress = 0;
+            StateHasChanged();
         }
     }
 
@@ -341,13 +466,18 @@ else
                 Snackbar.Add($"删除文档时发生错误: {ex.Message}", Severity.Error);
             }
         }
-    }
-
-
-    private async Task DownloadDocument(PdfDocument document)
+    }    private async Task DownloadDocument(PdfDocument document)
     {
-        // TODO: 实现文档下载
-        Snackbar.Add("下载功能正在开发中", Severity.Info);
+        try
+        {
+            // 使用NavigationManager导航到下载URL
+            Navigation.NavigateTo($"/api/documents/{document.Id}/download", forceLoad: true);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error downloading document {DocumentId}", document.Id);
+            Snackbar.Add($"下载文档失败: {ex.Message}", Severity.Error);
+        }
     }
 
     private async Task DownloadPpt(GeneratedPpt ppt)
@@ -440,4 +570,102 @@ else
 
     [CascadingParameter] private Task<AuthenticationState> AuthenticationStateTask { get; set; } = default!;
 #pragma warning restore CS1998
+
+    // 批量上传相关方法
+    private void UploadMultipleFiles(IReadOnlyList<IFormFile> files)
+    {
+        _batchUploadFiles = files;
+        StateHasChanged();
+    }
+
+    private async Task UploadBatchFiles()
+    {
+        if (_project == null || _batchUploadFiles == null || !_batchUploadFiles.Any()) return;
+
+        var validFiles = _batchUploadFiles.Where(f =>
+            (f.ContentType.Equals("application/pdf", StringComparison.OrdinalIgnoreCase) ||
+             f.FileName.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase)) &&
+            f.Length > 0 && f.Length <= 50 * 1024 * 1024).ToList();
+
+        if (!validFiles.Any())
+        {
+            Snackbar.Add("没有有效的PDF文件可上传", Severity.Warning);
+            return;
+        }
+
+        try
+        {
+            _isUploading = true;
+            var userId = GetCurrentUserId();
+            var totalFiles = validFiles.Count;
+            var uploadedFiles = 0;
+
+            foreach (var file in validFiles)
+            {
+                try
+                {
+                    _uploadProgress = (uploadedFiles * 100) / totalFiles;
+                    StateHasChanged();
+
+                    await ProcessingService.UploadPdfAsync(ProjectId, userId, file);
+                    uploadedFiles++;
+
+                    Snackbar.Add($"文件 {file.FileName} 上传成功", Severity.Success);
+                }
+                catch (Exception ex)
+                {
+                    Snackbar.Add($"文件 {file.FileName} 上传失败: {ex.Message}", Severity.Error);
+                }
+
+                _uploadProgress = (uploadedFiles * 100) / totalFiles;
+                StateHasChanged();
+            }
+
+            if (uploadedFiles > 0)
+            {
+                Snackbar.Add($"批量上传完成，成功上传 {uploadedFiles}/{totalFiles} 个文件", Severity.Success);
+                await LoadProject();
+                _batchUploadFiles = null;
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error in batch upload");
+            Snackbar.Add("批量上传过程中发生错误", Severity.Error);
+        }
+        finally
+        {
+            _isUploading = false;
+            _uploadProgress = 0;
+            StateHasChanged();
+        }
+    }
+
+    private void RemoveFileFromBatch(IFormFile file)
+    {
+        if (_batchUploadFiles != null)
+        {
+            var filesList = _batchUploadFiles.ToList();
+            filesList.Remove(file);
+            _batchUploadFiles = filesList;
+            StateHasChanged();
+        }
+    }
+
+    private void ClearBatchFiles()
+    {
+        _batchUploadFiles = null;
+        StateHasChanged();
+    }    private bool HasValidPdfFiles()
+    {
+        return _batchUploadFiles?.Any(f =>
+            (f.ContentType.Equals("application/pdf", StringComparison.OrdinalIgnoreCase) ||
+             f.FileName.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase)) &&
+            f.Length > 0 && f.Length <= 50 * 1024 * 1024) == true;
+    }
+
+    private bool GetBatchUploadDisabled()
+    {
+        return _isUploading || !HasValidPdfFiles();
+    }
 }

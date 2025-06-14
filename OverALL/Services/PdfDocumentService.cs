@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Hosting;
 using OverALL.Data;
 using OverALL.Data.Models;
 
@@ -10,13 +11,16 @@ namespace OverALL.Services;
 public class PdfDocumentService
 {
     private readonly ApplicationDbContext _context;
+    private readonly IWebHostEnvironment _environment;
     private readonly ILogger<PdfDocumentService> _logger;
 
     public PdfDocumentService(
         ApplicationDbContext context,
+        IWebHostEnvironment environment,
         ILogger<PdfDocumentService> logger)
     {
         _context = context;
+        _environment = environment;
         _logger = logger;
     }
 
@@ -81,16 +85,21 @@ public class PdfDocumentService
     /// </summary>
     public async Task<bool> DeleteDocumentAsync(string documentId)
     {
-        var document = await _context.PdfDocuments.FindAsync(documentId);
+        var document = await _context.PdfDocuments
+            .Include(d => d.Project)
+            .FirstOrDefaultAsync(d => d.Id == documentId);
+
         if (document == null)
             return false;
 
         // 删除文件
         try
         {
-            if (File.Exists(document.FilePath))
+            // 构建绝对路径，使用ContentRootPath作为基础路径
+            var absolutePath = Path.Combine(_environment.ContentRootPath, document.FilePath);
+            if (File.Exists(absolutePath))
             {
-                File.Delete(document.FilePath);
+                File.Delete(absolutePath);
             }
         }
         catch (Exception ex)
@@ -124,6 +133,40 @@ public class PdfDocumentService
             FailedDocuments = documents.Count(d => d.Status == DocumentStatus.Failed),
             TotalSize = documents.Sum(d => d.FileSize)
         };
+    }
+
+    /// <summary>
+    /// 获取文档的绝对路径用于下载
+    /// </summary>
+    /// <param name="documentId">文档ID</param>
+    /// <returns>文档的绝对路径，如果文档不存在返回null</returns>
+    public async Task<string?> GetDocumentAbsolutePathAsync(string documentId)
+    {
+        var document = await _context.PdfDocuments.FindAsync(documentId);
+        if (document == null)
+            return null;
+
+        // 使用ContentRootPath作为基础路径，确保路径正确
+        return Path.Combine(_environment.ContentRootPath, document.FilePath);
+    }
+
+    /// <summary>
+    /// 获取文档下载信息
+    /// </summary>
+    /// <param name="documentId">文档ID</param>
+    /// <returns>文档信息，如果不存在返回null</returns>
+    public async Task<(string FilePath, string FileName, string ContentType)?> GetDocumentDownloadInfoAsync(string documentId)
+    {
+        var document = await _context.PdfDocuments.FindAsync(documentId);
+        if (document == null)
+            return null;
+
+        // 使用ContentRootPath作为基础路径，确保路径正确
+        var absolutePath = Path.Combine(_environment.ContentRootPath, document.FilePath);
+        if (!File.Exists(absolutePath))
+            return null;
+
+        return (absolutePath, document.FileName, "application/pdf");
     }
 }
 

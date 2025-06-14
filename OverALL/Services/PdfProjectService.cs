@@ -31,17 +31,19 @@ public class PdfProjectService
     {
         // 生成哈希项目ID
         var projectId = IdGenerator.GenerateProjectId(userId, name);
-        var projectFolder = Path.Combine(_environment.ContentRootPath, "ProjectFiles", projectId);
+        // 使用相对路径存储在数据库中
+        var projectFolder = Path.Combine("ProjectFiles", projectId);
 
-        // 创建文件夹
-        Directory.CreateDirectory(projectFolder);
+        // 创建实际的文件夹（使用绝对路径）
+        var actualProjectFolder = Path.Combine(_environment.ContentRootPath, projectFolder);
+        Directory.CreateDirectory(actualProjectFolder);
 
         var project = new PdfProject
         {
             Id = projectId,
             Name = name,
             Description = description,
-            ProjectFolder = projectFolder,
+            ProjectFolder = projectFolder, // 存储相对路径
             UserId = userId,
             Status = ProjectStatus.Created,
             CreatedAt = DateTime.UtcNow,
@@ -116,9 +118,10 @@ public class PdfProjectService
         // 删除项目文件夹
         try
         {
-            if (Directory.Exists(project.ProjectFolder))
+            var absolutePath = GetProjectAbsolutePath(project);
+            if (Directory.Exists(absolutePath))
             {
-                Directory.Delete(project.ProjectFolder, true);
+                Directory.Delete(absolutePath, true);
             }
         }
         catch (Exception ex)
@@ -150,6 +153,26 @@ public class PdfProjectService
             ProcessingProjects = projects.Count(p => p.Status == ProjectStatus.Processing),
             FailedProjects = projects.Count(p => p.Status == ProjectStatus.Failed)
         };
+    }
+
+    /// <summary>
+    /// 获取项目的绝对路径
+    /// </summary>
+    /// <param name="project">项目实体</param>
+    /// <returns>项目的绝对路径</returns>
+    public string GetProjectAbsolutePath(PdfProject project)
+    {
+        return Path.Combine(_environment.ContentRootPath, project.ProjectFolder);
+    }
+
+    /// <summary>
+    /// 获取项目的绝对路径
+    /// </summary>
+    /// <param name="relativePath">相对路径</param>
+    /// <returns>绝对路径</returns>
+    public string GetAbsolutePath(string relativePath)
+    {
+        return Path.Combine(_environment.ContentRootPath, relativePath);
     }
 }
 

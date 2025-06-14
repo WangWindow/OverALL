@@ -26,8 +26,8 @@ public class PdfProcessingService
         _logger = logger;
         _projectService = projectService;
     }    /// <summary>
-    /// 上传PDF文档到项目
-    /// </summary>
+         /// 上传PDF文档到项目
+         /// </summary>
     public async Task<PdfDocument> UploadPdfAsync(string projectId, string userId, IFormFile pdfFile)
     {
         var project = await _projectService.GetProjectByIdAsync(projectId, userId);
@@ -35,42 +35,89 @@ public class PdfProcessingService
             throw new ArgumentException("项目不存在或无权限访问");
 
         // 验证文件类型
-        if (!pdfFile.ContentType.Equals("application/pdf", StringComparison.OrdinalIgnoreCase))
+        if (!pdfFile.ContentType.Equals("application/pdf", StringComparison.OrdinalIgnoreCase) &&
+            !pdfFile.FileName.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase))
             throw new ArgumentException("只支持PDF文件格式");
+
+        // 验证文件大小（限制为50MB）
+        const long maxFileSize = 50 * 1024 * 1024; // 50MB
+        if (pdfFile.Length > maxFileSize)
+            throw new ArgumentException("文件大小不能超过50MB");
+
+        if (pdfFile.Length == 0)
+            throw new ArgumentException("文件不能为空");
 
         // 生成文件路径
         var fileName = Path.GetFileNameWithoutExtension(pdfFile.FileName);
         var fileExtension = Path.GetExtension(pdfFile.FileName);
         var uniqueFileName = $"{fileName}_{DateTime.UtcNow:yyyyMMddHHmmss}{fileExtension}";
-        var filePath = Path.Combine(project.ProjectFolder, "Documents", uniqueFileName);
+
+        // 使用相对路径存储在数据库中
+        var relativeFilePath = Path.Combine(project.ProjectFolder, "Documents", uniqueFileName);
+        var absoluteFilePath = _projectService.GetAbsolutePath(relativeFilePath);
 
         // 确保目录存在
-        Directory.CreateDirectory(Path.GetDirectoryName(filePath)!);
+        var directoryPath = Path.GetDirectoryName(absoluteFilePath);
+        if (!string.IsNullOrEmpty(directoryPath))
+        {
+            Directory.CreateDirectory(directoryPath);
+        }
 
         // 保存文件
-        using (var stream = new FileStream(filePath, FileMode.Create))
+        try
         {
-            await pdfFile.CopyToAsync(stream);
-        }        // 保存到数据库
+            using (var stream = new FileStream(absoluteFilePath, FileMode.Create))
+            {
+                await pdfFile.CopyToAsync(stream);
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to save file {FileName} to {FilePath}", pdfFile.FileName, absoluteFilePath);
+            throw new InvalidOperationException($"保存文件失败: {ex.Message}");
+        }
+
+        // 保存到数据库（存储相对路径）
         var document = new PdfDocument
         {
             Id = IdGenerator.GenerateDocumentId(projectId, pdfFile.FileName),
             FileName = pdfFile.FileName,
-            FilePath = filePath,
+            FilePath = relativeFilePath, // 存储相对路径
             FileSize = pdfFile.Length,
             ProjectId = projectId,
             UploadedAt = DateTime.UtcNow,
             Status = DocumentStatus.Uploaded
         };
 
-        _context.PdfDocuments.Add(document);
-        await _context.SaveChangesAsync();
+        try
+        {
+            _context.PdfDocuments.Add(document);
+            await _context.SaveChangesAsync();
+        }
+        catch (Exception ex)
+        {
+            // 如果数据库保存失败，尝试删除已上传的文件
+            try
+            {
+                if (File.Exists(absoluteFilePath))
+                {
+                    File.Delete(absoluteFilePath);
+                }
+            }
+            catch (Exception deleteEx)
+            {
+                _logger.LogWarning(deleteEx, "Failed to cleanup file {FilePath} after database save failure", absoluteFilePath);
+            }
+
+            _logger.LogError(ex, "Failed to save document {FileName} to database", pdfFile.FileName);
+            throw new InvalidOperationException($"保存文档信息到数据库失败: {ex.Message}");
+        }
 
         _logger.LogInformation("Uploaded PDF {FileName} to project {ProjectId}", pdfFile.FileName, projectId);
         return document;
-    }    /// <summary>
-    /// 开始处理PDF文档（调用Python脚本或C#实现）
-    /// </summary>
+    }/// <summary>
+     /// 开始处理PDF文档（调用Python脚本或C#实现）
+     /// </summary>
     public async Task<bool> StartPdfProcessingAsync(string projectId, string userId)
     {
         var project = await _projectService.GetProjectByIdAsync(projectId, userId);
@@ -111,8 +158,8 @@ public class PdfProcessingService
             return false;
         }
     }    /// <summary>
-    /// 步骤1: 文献解析模块
-    /// </summary>
+         /// 步骤1: 文献解析模块
+         /// </summary>
     private async Task ProcessDocumentAnalysisAsync(string projectId)
     {
         await RecordProcessingStepAsync(projectId, "文献解析", "开始解析PDF文档结构");
@@ -188,8 +235,8 @@ public class PdfProcessingService
             throw;
         }
     }    /// <summary>
-    /// 记录处理步骤
-    /// </summary>
+         /// 记录处理步骤
+         /// </summary>
     private async Task RecordProcessingStepAsync(string projectId, string stepName, string description)
     {
         var step = new ProcessingStep
@@ -207,8 +254,8 @@ public class PdfProcessingService
 
         _logger.LogInformation("Recorded processing step {StepName} for project {ProjectId}", stepName, projectId);
     }    /// <summary>
-    /// 获取项目的处理进度
-    /// </summary>
+         /// 获取项目的处理进度
+         /// </summary>
     public async Task<ProcessingProgress> GetProcessingProgressAsync(string projectId, string userId)
     {
         var project = await _projectService.GetProjectByIdAsync(projectId, userId);
