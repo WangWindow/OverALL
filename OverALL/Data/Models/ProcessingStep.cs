@@ -7,7 +7,9 @@ namespace OverALL.Data.Models;
 /// </summary>
 public class ProcessingStep
 {
-    public int Id { get; set; }
+    [Key]
+    [MaxLength(32)]
+    public string Id { get; set; } = string.Empty;
     /// <summary>
     /// 步骤名称
     /// </summary>
@@ -54,12 +56,11 @@ public class ProcessingStep
     /// <summary>
     /// 错误信息
     /// </summary>
-    public string? ErrorMessage { get; set; }
-
-    /// <summary>
+    public string? ErrorMessage { get; set; }    /// <summary>
     /// 所属项目ID
     /// </summary>
-    public int ProjectId { get; set; }
+    [MaxLength(32)]
+    public string ProjectId { get; set; } = string.Empty;
 
     /// <summary>
     /// 所属项目

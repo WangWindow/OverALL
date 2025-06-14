@@ -25,12 +25,10 @@ public class PdfProcessingService
         _environment = environment;
         _logger = logger;
         _projectService = projectService;
-    }
-
-    /// <summary>
+    }    /// <summary>
     /// 上传PDF文档到项目
     /// </summary>
-    public async Task<PdfDocument> UploadPdfAsync(int projectId, string userId, IFormFile pdfFile)
+    public async Task<PdfDocument> UploadPdfAsync(string projectId, string userId, IFormFile pdfFile)
     {
         var project = await _projectService.GetProjectByIdAsync(projectId, userId);
         if (project == null)
@@ -53,11 +51,10 @@ public class PdfProcessingService
         using (var stream = new FileStream(filePath, FileMode.Create))
         {
             await pdfFile.CopyToAsync(stream);
-        }
-
-        // 保存到数据库
+        }        // 保存到数据库
         var document = new PdfDocument
         {
+            Id = IdGenerator.GenerateDocumentId(projectId, pdfFile.FileName),
             FileName = pdfFile.FileName,
             FilePath = filePath,
             FileSize = pdfFile.Length,
@@ -71,12 +68,10 @@ public class PdfProcessingService
 
         _logger.LogInformation("Uploaded PDF {FileName} to project {ProjectId}", pdfFile.FileName, projectId);
         return document;
-    }
-
-    /// <summary>
+    }    /// <summary>
     /// 开始处理PDF文档（调用Python脚本或C#实现）
     /// </summary>
-    public async Task<bool> StartPdfProcessingAsync(int projectId, string userId)
+    public async Task<bool> StartPdfProcessingAsync(string projectId, string userId)
     {
         var project = await _projectService.GetProjectByIdAsync(projectId, userId);
         if (project == null)
@@ -115,12 +110,10 @@ public class PdfProcessingService
             await RecordProcessingStepAsync(projectId, "处理失败", $"处理过程中发生错误: {ex.Message}");
             return false;
         }
-    }
-
-    /// <summary>
+    }    /// <summary>
     /// 步骤1: 文献解析模块
     /// </summary>
-    private async Task ProcessDocumentAnalysisAsync(int projectId)
+    private async Task ProcessDocumentAnalysisAsync(string projectId)
     {
         await RecordProcessingStepAsync(projectId, "文献解析", "开始解析PDF文档结构");
 
@@ -134,7 +127,7 @@ public class PdfProcessingService
     /// <summary>
     /// 步骤2: 文献获取模块
     /// </summary>
-    private async Task ProcessReferenceExtractionAsync(int projectId)
+    private async Task ProcessReferenceExtractionAsync(string projectId)
     {
         await RecordProcessingStepAsync(projectId, "文献获取", "开始提取参考文献");
 
@@ -147,7 +140,7 @@ public class PdfProcessingService
     /// <summary>
     /// 步骤7: 备注生成模块
     /// </summary>
-    private async Task ProcessNotesGenerationAsync(int projectId)
+    private async Task ProcessNotesGenerationAsync(string projectId)
     {
         await RecordProcessingStepAsync(projectId, "备注生成", "开始生成演示文稿备注");
 
@@ -194,15 +187,14 @@ public class PdfProcessingService
             _logger.LogError(ex, "Failed to execute Python script {ScriptPath}", scriptPath);
             throw;
         }
-    }
-
-    /// <summary>
+    }    /// <summary>
     /// 记录处理步骤
     /// </summary>
-    private async Task RecordProcessingStepAsync(int projectId, string stepName, string description)
+    private async Task RecordProcessingStepAsync(string projectId, string stepName, string description)
     {
         var step = new ProcessingStep
         {
+            Id = IdGenerator.GenerateStepId(projectId, stepName),
             ProjectId = projectId,
             StepName = stepName,
             Description = description,
@@ -214,12 +206,10 @@ public class PdfProcessingService
         await _context.SaveChangesAsync();
 
         _logger.LogInformation("Recorded processing step {StepName} for project {ProjectId}", stepName, projectId);
-    }
-
-    /// <summary>
+    }    /// <summary>
     /// 获取项目的处理进度
     /// </summary>
-    public async Task<ProcessingProgress> GetProcessingProgressAsync(int projectId, string userId)
+    public async Task<ProcessingProgress> GetProcessingProgressAsync(string projectId, string userId)
     {
         var project = await _projectService.GetProjectByIdAsync(projectId, userId);
         if (project == null)

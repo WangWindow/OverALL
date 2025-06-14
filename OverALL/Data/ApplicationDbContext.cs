@@ -19,6 +19,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
         modelBuilder.Entity<PdfProject>(entity =>
         {
             entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).IsRequired().HasMaxLength(32);
             entity.Property(e => e.Name).IsRequired().HasMaxLength(200);
             entity.Property(e => e.ProjectFolder).IsRequired().HasMaxLength(500);
             entity.Property(e => e.UserId).IsRequired();
@@ -38,8 +39,10 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
         modelBuilder.Entity<PdfDocument>(entity =>
         {
             entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).IsRequired().HasMaxLength(32);
             entity.Property(e => e.FileName).IsRequired().HasMaxLength(200);
             entity.Property(e => e.FilePath).IsRequired().HasMaxLength(500);
+            entity.Property(e => e.ProjectId).IsRequired().HasMaxLength(32);
 
             // 配置与项目的关系
             entity.HasOne(e => e.Project)
@@ -54,7 +57,9 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
         modelBuilder.Entity<ProcessingStep>(entity =>
         {
             entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).IsRequired().HasMaxLength(32);
             entity.Property(e => e.StepName).IsRequired().HasMaxLength(100);
+            entity.Property(e => e.ProjectId).IsRequired().HasMaxLength(32);
 
             // 配置与项目的关系
             entity.HasOne(e => e.Project)
@@ -70,8 +75,10 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
         modelBuilder.Entity<GeneratedPpt>(entity =>
         {
             entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id).IsRequired().HasMaxLength(32);
             entity.Property(e => e.FileName).IsRequired().HasMaxLength(200);
             entity.Property(e => e.FilePath).IsRequired().HasMaxLength(500);
+            entity.Property(e => e.ProjectId).IsRequired().HasMaxLength(32);
 
             // 配置与项目的关系
             entity.HasOne(e => e.Project)

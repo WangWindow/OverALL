@@ -12,8 +12,8 @@
 <PageTitle>创建项目</PageTitle>
 
 <MudText Typo="Typo.h4" GutterBottom="true">
-    <MudIcon Icon="@Icons.Material.Filled.Add" Class="mr-3"/>
-    创建新的PDF项目
+    <MudIcon Icon="@Icons.Material.Filled.Add" Class="mr-3" />
+    创建新的项目
 </MudText>
 
 <MudPaper Class="pa-6 mt-4">
@@ -22,32 +22,21 @@
 
         <MudGrid>
             <MudItem xs="12">
-                <MudTextField @bind-Value="_model.Name"
-                              Label="项目名称"
-                              Variant="Variant.Outlined"
-                              Required="true"
-                              MaxLength="200"
-                              Counter="200"
-                              HelperText="请输入项目的名称"
-                              For="@(() => _model.Name)" />
+                <MudTextField @bind-Value="_model.Name" Label="项目名称" Variant="Variant.Outlined" Required="true"
+                    MaxLength="200" Counter="200" HelperText="请输入项目的名称" For="@(() => _model.Name)" />
             </MudItem>
 
             <MudItem xs="12">
-                <MudTextField @bind-Value="_model.Description"
-                              Label="项目描述"
-                              Variant="Variant.Outlined"
-                              Lines="4"
-                              MaxLength="1000"
-                              Counter="1000"
-                              HelperText="描述项目的目标和内容（可选）"
-                              For="@(() => _model.Description)" />
+                <MudTextField @bind-Value="_model.Description" Label="项目描述" Variant="Variant.Outlined" Lines="4"
+                    MaxLength="1000" Counter="1000" HelperText="描述项目的目标和内容（可选）" For="@(() => _model.Description)" />
             </MudItem>
 
             <MudItem xs="12">
                 <MudAlert Severity="Severity.Info" Class="my-4">
                     <MudText Typo="Typo.body2">
                         <strong>项目处理流程：</strong>
-                    </MudText>                    <MudList T="string" Dense="true" Class="mt-2">
+                    </MudText>
+                    <MudList T="string" Dense="true" Class="mt-2">
                         <MudListItem T="string" Icon="@Icons.Material.Filled.FileUpload">
                             <MudText Typo="Typo.body2">1. 上传PDF文档</MudText>
                         </MudListItem>
@@ -77,14 +66,11 @@
             </MudItem>
 
             <MudItem xs="12" Class="d-flex gap-4">
-                <MudButton ButtonType="ButtonType.Submit"
-                           Variant="Variant.Filled"
-                           Color="Color.Primary"
-                           StartIcon="@Icons.Material.Filled.Save"
-                           Disabled="@_isSubmitting">
+                <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary"
+                    StartIcon="@Icons.Material.Filled.Save" Disabled="@_isSubmitting">
                     @if (_isSubmitting)
                     {
-                        <MudProgressCircular Class="ms-n1" Size="Size.Small" Indeterminate="true"/>
+                        <MudProgressCircular Class="ms-n1" Size="Size.Small" Indeterminate="true" />
                         <MudText Class="ms-2">创建中...</MudText>
                     }
                     else
@@ -93,11 +79,8 @@
                     }
                 </MudButton>
 
-                <MudButton Variant="Variant.Outlined"
-                           Color="Color.Default"
-                           StartIcon="@Icons.Material.Filled.Cancel"
-                           OnClick="@Cancel"
-                           Disabled="@_isSubmitting">
+                <MudButton Variant="Variant.Outlined" Color="Color.Default" StartIcon="@Icons.Material.Filled.Cancel"
+                    OnClick="@Cancel" Disabled="@_isSubmitting">
                     取消
                 </MudButton>
             </MudItem>
@@ -107,7 +90,7 @@
 
 @code {
     private CreateProjectModel _model = new();
-    private bool _isSubmitting = false;    private async Task CreateProjectAsync()
+    private bool _isSubmitting = false; private async Task CreateProjectAsync()
     {
         try
         {
@@ -138,13 +121,15 @@
     private void Cancel()
     {
         Navigation.NavigateTo("/projects");
-    }    private string GetCurrentUserId()
+    }
+    private string GetCurrentUserId()
     {
         var authState = Task.Run(async () => await AuthenticationStateTask).Result;
         return authState.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? string.Empty;
     }
 
-    [CascadingParameter] private Task<AuthenticationState> AuthenticationStateTask { get; set; } = default!;
+    [CascadingParameter]
+    private Task<AuthenticationState> AuthenticationStateTask { get; set; } = default!;
 
     public class CreateProjectModel
     {

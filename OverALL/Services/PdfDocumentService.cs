@@ -23,7 +23,7 @@ public class PdfDocumentService
     /// <summary>
     /// 获取项目的所有文档
     /// </summary>
-    public async Task<List<PdfDocument>> GetProjectDocumentsAsync(int projectId)
+    public async Task<List<PdfDocument>> GetProjectDocumentsAsync(string projectId)
     {
         return await _context.PdfDocuments
             .Where(d => d.ProjectId == projectId)
@@ -34,7 +34,7 @@ public class PdfDocumentService
     /// <summary>
     /// 根据ID获取文档
     /// </summary>
-    public async Task<PdfDocument?> GetDocumentByIdAsync(int documentId)
+    public async Task<PdfDocument?> GetDocumentByIdAsync(string documentId)
     {
         return await _context.PdfDocuments
             .Include(d => d.Project)
@@ -44,7 +44,7 @@ public class PdfDocumentService
     /// <summary>
     /// 更新文档状态
     /// </summary>
-    public async Task<bool> UpdateDocumentStatusAsync(int documentId, DocumentStatus status)
+    public async Task<bool> UpdateDocumentStatusAsync(string documentId, DocumentStatus status)
     {
         var document = await _context.PdfDocuments.FindAsync(documentId);
         if (document == null)
@@ -79,7 +79,7 @@ public class PdfDocumentService
     /// <summary>
     /// 删除文档
     /// </summary>
-    public async Task<bool> DeleteDocumentAsync(int documentId)
+    public async Task<bool> DeleteDocumentAsync(string documentId)
     {
         var document = await _context.PdfDocuments.FindAsync(documentId);
         if (document == null)
@@ -109,7 +109,7 @@ public class PdfDocumentService
     /// <summary>
     /// 获取文档统计信息
     /// </summary>
-    public async Task<DocumentStatistics> GetDocumentStatisticsAsync(int projectId)
+    public async Task<DocumentStatistics> GetDocumentStatisticsAsync(string projectId)
     {
         var documents = await _context.PdfDocuments
             .Where(d => d.ProjectId == projectId)

@@ -7,7 +7,9 @@ namespace OverALL.Data.Models;
 /// </summary>
 public class GeneratedPpt
 {
-    public int Id { get; set; }
+    [Key]
+    [MaxLength(32)]
+    public string Id { get; set; } = string.Empty;
 
     [Required]
     [MaxLength(200)]
@@ -45,12 +47,11 @@ public class GeneratedPpt
     /// <summary>
     /// 生成配置（JSON格式）
     /// </summary>
-    public string? GenerationConfig { get; set; }
-
-    /// <summary>
+    public string? GenerationConfig { get; set; }    /// <summary>
     /// 所属项目ID
     /// </summary>
-    public int ProjectId { get; set; }
+    [MaxLength(32)]
+    public string ProjectId { get; set; } = string.Empty;
 
     /// <summary>
     /// 所属项目

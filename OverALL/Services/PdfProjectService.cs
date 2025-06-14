@@ -29,8 +29,8 @@ public class PdfProjectService
     /// </summary>
     public async Task<PdfProject> CreateProjectAsync(string name, string? description, string userId)
     {
-        // 生成项目文件夹路径
-        var projectId = Guid.NewGuid().ToString("N");
+        // 生成哈希项目ID
+        var projectId = IdGenerator.GenerateProjectId(userId, name);
         var projectFolder = Path.Combine(_environment.ContentRootPath, "ProjectFiles", projectId);
 
         // 创建文件夹
@@ -38,6 +38,7 @@ public class PdfProjectService
 
         var project = new PdfProject
         {
+            Id = projectId,
             Name = name,
             Description = description,
             ProjectFolder = projectFolder,
@@ -71,7 +72,7 @@ public class PdfProjectService
     /// <summary>
     /// 根据ID获取项目
     /// </summary>
-    public async Task<PdfProject?> GetProjectByIdAsync(int projectId, string userId)
+    public async Task<PdfProject?> GetProjectByIdAsync(string projectId, string userId)
     {
         return await _context.PdfProjects
             .Where(p => p.Id == projectId && p.UserId == userId)
@@ -84,7 +85,7 @@ public class PdfProjectService
     /// <summary>
     /// 更新项目状态
     /// </summary>
-    public async Task<bool> UpdateProjectStatusAsync(int projectId, ProjectStatus status, string userId)
+    public async Task<bool> UpdateProjectStatusAsync(string projectId, ProjectStatus status, string userId)
     {
         var project = await _context.PdfProjects
             .FirstOrDefaultAsync(p => p.Id == projectId && p.UserId == userId);
@@ -104,7 +105,7 @@ public class PdfProjectService
     /// <summary>
     /// 删除项目
     /// </summary>
-    public async Task<bool> DeleteProjectAsync(int projectId, string userId)
+    public async Task<bool> DeleteProjectAsync(string projectId, string userId)
     {
         var project = await _context.PdfProjects
             .FirstOrDefaultAsync(p => p.Id == projectId && p.UserId == userId);

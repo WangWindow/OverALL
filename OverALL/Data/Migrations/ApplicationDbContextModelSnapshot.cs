@@ -15,7 +15,7 @@ namespace OverALL.Migrations
         protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
-            modelBuilder.HasAnnotation("ProductVersion", "9.0.5");
+            modelBuilder.HasAnnotation("ProductVersion", "9.0.6");
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>
                 {
@@ -211,9 +211,9 @@ namespace OverALL.Migrations
 
             modelBuilder.Entity("OverALL.Data.Models.GeneratedPpt", b =>
                 {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
+                    b.Property<string>("Id")
+                        .HasMaxLength(32)
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("FileName")
                         .IsRequired()
@@ -237,8 +237,10 @@ namespace OverALL.Migrations
                     b.Property<bool>("HasNotes")
                         .HasColumnType("INTEGER");
 
-                    b.Property<int>("ProjectId")
-                        .HasColumnType("INTEGER");
+                    b.Property<string>("ProjectId")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("TEXT");
 
                     b.Property<int>("SlideCount")
                         .HasColumnType("INTEGER");
@@ -255,9 +257,9 @@ namespace OverALL.Migrations
 
             modelBuilder.Entity("OverALL.Data.Models.PdfDocument", b =>
                 {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
+                    b.Property<string>("Id")
+                        .HasMaxLength(32)
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("FileName")
                         .IsRequired()
@@ -272,8 +274,10 @@ namespace OverALL.Migrations
                     b.Property<long>("FileSize")
                         .HasColumnType("INTEGER");
 
-                    b.Property<int>("ProjectId")
-                        .HasColumnType("INTEGER");
+                    b.Property<string>("ProjectId")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("References")
                         .HasColumnType("TEXT");
@@ -296,9 +300,9 @@ namespace OverALL.Migrations
 
             modelBuilder.Entity("OverALL.Data.Models.PdfProject", b =>
                 {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
+                    b.Property<string>("Id")
+                        .HasMaxLength(32)
+                        .HasColumnType("TEXT");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("TEXT");
@@ -338,9 +342,9 @@ namespace OverALL.Migrations
 
             modelBuilder.Entity("OverALL.Data.Models.ProcessingStep", b =>
                 {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
+                    b.Property<string>("Id")
+                        .HasMaxLength(32)
+                        .HasColumnType("TEXT");
 
                     b.Property<DateTime?>("CompletedAt")
                         .HasColumnType("TEXT");
@@ -358,8 +362,10 @@ namespace OverALL.Migrations
                     b.Property<string>("Output")
                         .HasColumnType("TEXT");
 
-                    b.Property<int>("ProjectId")
-                        .HasColumnType("INTEGER");
+                    b.Property<string>("ProjectId")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("TEXT");
 
                     b.Property<DateTime?>("StartedAt")
                         .HasColumnType("TEXT");

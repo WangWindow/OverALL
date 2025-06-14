@@ -8,7 +8,9 @@ namespace OverALL.Data.Models;
 /// </summary>
 public class PdfProject
 {
-    public int Id { get; set; }
+    [Key]
+    [MaxLength(32)]
+    public string Id { get; set; } = string.Empty;
 
     [Required]
     [MaxLength(200)]

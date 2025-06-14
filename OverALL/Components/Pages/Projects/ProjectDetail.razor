@@ -1,4 +1,4 @@
-@page "/projects/{projectId:int}"
+@page "/projects/{projectId}"
 @using OverALL.Data.Models
 @using OverALL.Services
 @using Microsoft.AspNetCore.Authorization
@@ -16,7 +16,7 @@
 
 @if (_isLoading)
 {
-    <MudProgressLinear Indeterminate="true"/>
+    <MudProgressLinear Indeterminate="true" />
     <MudText Align="Align.Center" Class="my-4">加载项目信息中...</MudText>
 }
 else if (_project == null)
@@ -34,7 +34,8 @@ else
             {
                 <MudText Typo="Typo.body1" Color="Color.Secondary">@_project.Description</MudText>
             }
-        </div>        <div class="d-flex gap-2">
+        </div>
+        <div class="d-flex gap-2">
             <MudChip T="string" Color="@GetStatusColor(_project.Status)">
                 @GetStatusText(_project.Status)
             </MudChip>
@@ -48,13 +49,11 @@ else
                 <MudText Typo="Typo.h6">PDF文档</MudText>
                 <MudFileUpload T="IFormFile" Accept=".pdf" FilesChanged="UploadFiles" MaximumFileCount="10">
                     <ActivatorContent>
-                        <MudButton Variant="Variant.Filled"
-                                   Color="Color.Primary"
-                                   StartIcon="@Icons.Material.Filled.CloudUpload"
-                                   Disabled="@_isUploading">
+                        <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                            StartIcon="@Icons.Material.Filled.CloudUpload" Disabled="@_isUploading">
                             @if (_isUploading)
                             {
-                                <MudProgressCircular Class="ms-n1" Size="Size.Small" Indeterminate="true"/>
+                                <MudProgressCircular Class="ms-n1" Size="Size.Small" Indeterminate="true" />
                                 <MudText Class="ms-2">上传中...</MudText>
                             }
                             else
@@ -78,23 +77,18 @@ else
                     </HeaderContent>
                     <RowTemplate>
                         <MudTd DataLabel="文件名">@context.FileName</MudTd>
-                        <MudTd DataLabel="大小">@FormatFileSize(context.FileSize)</MudTd>                        <MudTd DataLabel="状态">
+                        <MudTd DataLabel="大小">@FormatFileSize(context.FileSize)</MudTd>
+                        <MudTd DataLabel="状态">
                             <MudChip T="string" Color="@GetDocumentStatusColor(context.Status)" Size="Size.Small">
                                 @GetDocumentStatusText(context.Status)
                             </MudChip>
                         </MudTd>
                         <MudTd DataLabel="上传时间">@context.UploadedAt.ToString("yyyy-MM-dd HH:mm")</MudTd>
                         <MudTd DataLabel="操作">
-                            <MudIconButton Icon="@Icons.Material.Filled.Download"
-                                           Color="Color.Primary"
-                                           Size="Size.Small"
-                                           OnClick="@(() => DownloadDocument(context))"
-                                           title="下载"/>
-                            <MudIconButton Icon="@Icons.Material.Filled.Delete"
-                                           Color="Color.Error"
-                                           Size="Size.Small"
-                                           OnClick="@(() => DeleteDocument(context))"
-                                           title="删除"/>
+                            <MudIconButton Icon="@Icons.Material.Filled.Download" Color="Color.Primary" Size="Size.Small"
+                                OnClick="@(() => DownloadDocument(context))" title="下载" />
+                            <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" Size="Size.Small"
+                                OnClick="@(() => DeleteDocument(context))" title="删除" />
                         </MudTd>
                     </RowTemplate>
                 </MudTable>
@@ -113,14 +107,11 @@ else
                 <MudText Typo="Typo.h6">处理流程</MudText>
                 @if (_project.Status == ProjectStatus.Created && _project.Documents.Any())
                 {
-                    <MudButton Variant="Variant.Filled"
-                               Color="Color.Success"
-                               StartIcon="@Icons.Material.Filled.PlayArrow"
-                               OnClick="@StartProcessing"
-                               Disabled="@_isProcessing">
+                    <MudButton Variant="Variant.Filled" Color="Color.Success" StartIcon="@Icons.Material.Filled.PlayArrow"
+                        OnClick="@StartProcessing" Disabled="@_isProcessing">
                         @if (_isProcessing)
                         {
-                            <MudProgressCircular Class="ms-n1" Size="Size.Small" Indeterminate="true"/>
+                            <MudProgressCircular Class="ms-n1" Size="Size.Small" Indeterminate="true" />
                             <MudText Class="ms-2">启动中...</MudText>
                         }
                         else
@@ -133,7 +124,7 @@ else
 
             @if (_processingProgress != null)
             {
-                <MudProgressLinear Value="@_processingProgress.Progress" Class="mb-4"/>
+                <MudProgressLinear Value="@_processingProgress.Progress" Class="mb-4" />
                 <MudText Typo="Typo.body1" Class="mb-4">
                     当前进度: @_processingProgress.Progress% - @_processingProgress.CurrentStep
                 </MudText>
@@ -143,9 +134,8 @@ else
                     <MudTimeline TimelinePosition="TimelinePosition.Start">
                         @foreach (var step in _processingProgress.ProcessingSteps)
                         {
-                            <MudTimelineItem Color="@GetStepColor(step.Status)"
-                                             Icon="@GetStepIcon(step.Status)"
-                                             TimelineAlign="TimelineAlign.Start">
+                            <MudTimelineItem Color="@GetStepColor(step.Status)" Icon="@GetStepIcon(step.Status)"
+                                TimelineAlign="TimelineAlign.Start">
                                 <MudCard>
                                     <MudCardContent>
                                         <MudText Typo="Typo.h6">@step.StepName</MudText>
@@ -182,7 +172,7 @@ else
                             <MudCard>
                                 <MudCardContent>
                                     <div class="d-flex align-center mb-2">
-                                        <MudIcon Icon="@Icons.Material.Filled.Slideshow" Color="Color.Primary" Class="mr-2"/>
+                                        <MudIcon Icon="@Icons.Material.Filled.Slideshow" Color="Color.Primary" Class="mr-2" />
                                         <MudText Typo="Typo.h6">@ppt.FileName</MudText>
                                     </div>
                                     <MudText Typo="Typo.body2" Color="Color.Secondary">
@@ -196,14 +186,12 @@ else
                                     </MudText>
                                 </MudCardContent>
                                 <MudCardActions>
-                                    <MudButton StartIcon="@Icons.Material.Filled.Download"
-                                               Color="Color.Primary"
-                                               OnClick="@(() => DownloadPpt(ppt))">
+                                    <MudButton StartIcon="@Icons.Material.Filled.Download" Color="Color.Primary"
+                                        OnClick="@(() => DownloadPpt(ppt))">
                                         下载
                                     </MudButton>
-                                    <MudButton StartIcon="@Icons.Material.Filled.Preview"
-                                               Color="Color.Default"
-                                               OnClick="@(() => PreviewPpt(ppt))">
+                                    <MudButton StartIcon="@Icons.Material.Filled.Preview" Color="Color.Default"
+                                        OnClick="@(() => PreviewPpt(ppt))">
                                         预览
                                     </MudButton>
                                 </MudCardActions>
@@ -223,7 +211,8 @@ else
 }
 
 @code {
-    [Parameter] public int ProjectId { get; set; }
+#pragma warning disable CS1998 // Async method lacks 'await' operators and will run synchronously
+    [Parameter] public string ProjectId { get; set; } = string.Empty;
 
     private PdfProject? _project;
     private ProcessingProgress? _processingProgress;
@@ -327,10 +316,10 @@ else
     private async Task DeleteDocument(PdfDocument document)
     {
         var result = await DialogService.ShowMessageBox(
-            "确认删除",
-            $"确定要删除文档 '{document.FileName}' 吗？",
-            yesText: "删除",
-            cancelText: "取消");
+        "确认删除",
+        $"确定要删除文档 '{document.FileName}' 吗？",
+        yesText: "删除",
+        cancelText: "取消");
 
         if (result == true)
         {
@@ -354,6 +343,7 @@ else
         }
     }
 
+
     private async Task DownloadDocument(PdfDocument document)
     {
         // TODO: 实现文档下载
@@ -370,7 +360,7 @@ else
     {
         // TODO: 实现PPT预览
         Snackbar.Add("预览功能正在开发中", Severity.Info);
-    }    // 辅助方法
+    } // 辅助方法
     private string GetCurrentUserId()
     {
         var authState = Task.Run(async () => await AuthenticationStateTask).Result;
@@ -444,8 +434,10 @@ else
         {
             order++;
             len = len / 1024;
-        }        return $"{len:0.##} {sizes[order]}";
+        }
+        return $"{len:0.##} {sizes[order]}";
     }
 
     [CascadingParameter] private Task<AuthenticationState> AuthenticationStateTask { get; set; } = default!;
+#pragma warning restore CS1998
 }

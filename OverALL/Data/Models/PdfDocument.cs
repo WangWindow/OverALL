@@ -7,7 +7,9 @@ namespace OverALL.Data.Models;
 /// </summary>
 public class PdfDocument
 {
-    public int Id { get; set; }
+    [Key]
+    [MaxLength(32)]
+    public string Id { get; set; } = string.Empty;
 
     [Required]
     [MaxLength(200)]
@@ -40,12 +42,11 @@ public class PdfDocument
     /// <summary>
     /// 参考文献列表
     /// </summary>
-    public string? References { get; set; }
-
-    /// <summary>
+    public string? References { get; set; }    /// <summary>
     /// 所属项目ID
     /// </summary>
-    public int ProjectId { get; set; }
+    [MaxLength(32)]
+    public string ProjectId { get; set; } = string.Empty;
 
     /// <summary>
     /// 所属项目

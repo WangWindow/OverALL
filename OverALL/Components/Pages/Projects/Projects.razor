@@ -12,7 +12,7 @@
 <PageTitle>项目管理</PageTitle>
 
 <MudText Typo="Typo.h3" GutterBottom="true">
-    <MudIcon Icon="@Icons.Material.Filled.Dashboard" Class="mr-3"/>
+    <MudIcon Icon="@Icons.Material.Filled.Dashboard" Class="mr-3" />
     我的项目
 </MudText>
 
@@ -26,7 +26,7 @@
                         <MudText Typo="Typo.body2" Color="Color.Primary">总项目数</MudText>
                         <MudText Typo="Typo.h4">@_statistics.TotalProjects</MudText>
                     </div>
-                    <MudIcon Icon="@Icons.Material.Filled.FolderOpen" Size="Size.Large" Color="Color.Primary"/>
+                    <MudIcon Icon="@Icons.Material.Filled.FolderOpen" Size="Size.Large" Color="Color.Primary" />
                 </div>
             </MudCardContent>
         </MudCard>
@@ -40,7 +40,7 @@
                         <MudText Typo="Typo.body2" Color="Color.Success">已完成</MudText>
                         <MudText Typo="Typo.h4">@_statistics.CompletedProjects</MudText>
                     </div>
-                    <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Size="Size.Large" Color="Color.Success"/>
+                    <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Size="Size.Large" Color="Color.Success" />
                 </div>
             </MudCardContent>
         </MudCard>
@@ -54,7 +54,7 @@
                         <MudText Typo="Typo.body2" Color="Color.Warning">处理中</MudText>
                         <MudText Typo="Typo.h4">@_statistics.ProcessingProjects</MudText>
                     </div>
-                    <MudIcon Icon="@Icons.Material.Filled.Psychology" Size="Size.Large" Color="Color.Warning"/>
+                    <MudIcon Icon="@Icons.Material.Filled.Psychology" Size="Size.Large" Color="Color.Warning" />
                 </div>
             </MudCardContent>
         </MudCard>
@@ -68,7 +68,7 @@
                         <MudText Typo="Typo.body2" Color="Color.Error">失败</MudText>
                         <MudText Typo="Typo.h4">@_statistics.FailedProjects</MudText>
                     </div>
-                    <MudIcon Icon="@Icons.Material.Filled.Error" Size="Size.Large" Color="Color.Error"/>
+                    <MudIcon Icon="@Icons.Material.Filled.Error" Size="Size.Large" Color="Color.Error" />
                 </div>
             </MudCardContent>
         </MudCard>
@@ -78,28 +78,23 @@
 <MudPaper Class="pa-4 mt-4">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
         <MudText Typo="Typo.h6">项目列表</MudText>
-        <MudButton StartIcon="@Icons.Material.Filled.Add"
-                   Color="Color.Primary"
-                   Variant="Variant.Filled"
-                   OnClick="@(() => Navigation.NavigateTo("/projects/create"))">
+        <MudButton StartIcon="@Icons.Material.Filled.Add" Color="Color.Primary" Variant="Variant.Filled"
+            OnClick="@(() => Navigation.NavigateTo("/projects/create"))">
             创建新项目
         </MudButton>
     </div>
 
     @if (_isLoading)
     {
-        <MudProgressLinear Indeterminate="true" Class="my-4"/>
+        <MudProgressLinear Indeterminate="true" Class="my-4" />
         <MudText Align="Align.Center">加载中...</MudText>
     }
     else if (!_projects.Any())
     {
         <MudAlert Severity="Severity.Info" Class="my-4">
             <MudText>还没有创建任何项目。</MudText>
-            <MudButton StartIcon="@Icons.Material.Filled.Add"
-                       Color="Color.Primary"
-                       Variant="Variant.Text"
-                       OnClick="@(() => Navigation.NavigateTo("/projects/create"))"
-                       Class="mt-2">
+            <MudButton StartIcon="@Icons.Material.Filled.Add" Color="Color.Primary" Variant="Variant.Text"
+                OnClick="@(() => Navigation.NavigateTo("/projects/create"))" Class="mt-2">
                 创建第一个项目
             </MudButton>
         </MudAlert>
@@ -123,7 +118,8 @@
                             <MudText Typo="Typo.body2" Color="Color.Secondary">@context.Description</MudText>
                         }
                     </div>
-                </MudTd>                <MudTd DataLabel="状态">
+                </MudTd>
+                <MudTd DataLabel="状态">
                     <MudChip T="string" Color="@GetStatusColor(context.Status)" Size="Size.Small">
                         @GetStatusText(context.Status)
                     </MudChip>
@@ -136,21 +132,12 @@
                 </MudTd>
                 <MudTd DataLabel="操作">
                     <MudButtonGroup>
-                        <MudIconButton Icon="@Icons.Material.Filled.Visibility"
-                                       Color="Color.Primary"
-                                       Size="Size.Small"
-                                       OnClick="@(() => ViewProject(context.Id))"
-                                       title="查看详情"/>
-                        <MudIconButton Icon="@Icons.Material.Filled.Edit"
-                                       Color="Color.Default"
-                                       Size="Size.Small"
-                                       OnClick="@(() => EditProject(context.Id))"
-                                       title="编辑"/>
-                        <MudIconButton Icon="@Icons.Material.Filled.Delete"
-                                       Color="Color.Error"
-                                       Size="Size.Small"
-                                       OnClick="@(() => DeleteProject(context))"
-                                       title="删除"/>
+                        <MudIconButton Icon="@Icons.Material.Filled.Visibility" Color="Color.Primary" Size="Size.Small"
+                            OnClick="@(() => ViewProject(context.Id))" title="查看详情" />
+                        <MudIconButton Icon="@Icons.Material.Filled.Edit" Color="Color.Default" Size="Size.Small"
+                            OnClick="@(() => EditProject(context.Id))" title="编辑" />
+                        <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" Size="Size.Small"
+                            OnClick="@(() => DeleteProject(context))" title="删除" />
                     </MudButtonGroup>
                 </MudTd>
             </RowTemplate>
@@ -188,7 +175,8 @@
         {
             _isLoading = false;
         }
-    }    private string GetCurrentUserId()
+    }
+    private string GetCurrentUserId()
     {
         var authState = Task.Run(async () => await AuthenticationStateTask).Result;
         return authState.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? string.Empty;
@@ -218,14 +206,12 @@
             ProjectStatus.Cancelled => "已取消",
             _ => "未知"
         };
-    }
-
-    private void ViewProject(int projectId)
+    }    private void ViewProject(string projectId)
     {
         Navigation.NavigateTo($"/projects/{projectId}");
     }
 
-    private void EditProject(int projectId)
+    private void EditProject(string projectId)
     {
         Navigation.NavigateTo($"/projects/{projectId}/edit");
     }
@@ -233,10 +219,10 @@
     private async Task DeleteProject(PdfProject project)
     {
         var result = await DialogService.ShowMessageBox(
-            "确认删除",
-            $"确定要删除项目 '{project.Name}' 吗？这个操作不能撤销。",
-            yesText: "删除",
-            cancelText: "取消");
+        "确认删除",
+        $"确定要删除项目 '{project.Name}' 吗？这个操作不能撤销。",
+        yesText: "删除",
+        cancelText: "取消");
 
         if (result == true)
         {
@@ -255,10 +241,12 @@
                 }
             }
             catch (Exception ex)
-            {            Snackbar.Add($"删除项目时发生错误: {ex.Message}", Severity.Error);
+            {
+                Snackbar.Add($"删除项目时发生错误: {ex.Message}", Severity.Error);
             }
         }
     }
 
-    [CascadingParameter] private Task<AuthenticationState> AuthenticationStateTask { get; set; } = default!;
+    [CascadingParameter]
+    private Task<AuthenticationState> AuthenticationStateTask { get; set; } = default!;
 }
