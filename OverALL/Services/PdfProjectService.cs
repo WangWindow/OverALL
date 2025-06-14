@@ -1,7 +1,7 @@
 using System.Security.Claims;
 using Microsoft.EntityFrameworkCore;
 using OverALL.Data;
-using OverALL.Data.Models;
+using OverALL.Models;
 
 namespace OverALL.Services;
 
@@ -82,6 +82,27 @@ public class PdfProjectService
             .Include(p => p.ProcessingSteps.OrderBy(s => s.StartedAt))
             .Include(p => p.GeneratedPpts)
             .FirstOrDefaultAsync();
+    }
+
+    /// <summary>
+    /// 更新项目基本信息
+    /// </summary>
+    public async Task<bool> UpdateProjectAsync(string projectId, string name, string? description, string userId)
+    {
+        var project = await _context.PdfProjects
+            .FirstOrDefaultAsync(p => p.Id == projectId && p.UserId == userId);
+
+        if (project == null)
+            return false;
+
+        project.Name = name;
+        project.Description = description;
+        project.UpdatedAt = DateTime.UtcNow;
+
+        await _context.SaveChangesAsync();
+
+        _logger.LogInformation("Updated project {ProjectId} basic information", projectId);
+        return true;
     }
 
     /// <summary>

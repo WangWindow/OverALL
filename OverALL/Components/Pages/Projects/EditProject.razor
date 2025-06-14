@@ -1,0 +1,260 @@
+@page "/projects/{projectId}/edit"
+@using OverALL.Models
+@using OverALL.Services
+@using Microsoft.AspNetCore.Authorization
+@using System.Security.Claims
+@using System.ComponentModel.DataAnnotations
+@attribute [Authorize]
+@inject PdfProjectService ProjectService
+@inject NavigationManager Navigation
+@inject ISnackbar Snackbar
+@inject ILogger<EditProject> Logger
+
+<PageTitle>编辑项目</PageTitle>
+
+@if (_isLoading)
+{
+    <MudProgressLinear Indeterminate="true" />
+    <MudText Align="Align.Center" Class="my-4">加载项目信息中...</MudText>
+}
+else if (_project == null)
+{
+    <MudAlert Severity="Severity.Error">
+        项目不存在或您没有访问权限。
+    </MudAlert>
+}
+else
+{
+    <MudText Typo="Typo.h4" GutterBottom="true">
+        <MudIcon Icon="@Icons.Material.Filled.Edit" Class="mr-3" />
+        编辑项目: @_project.Name
+    </MudText>
+
+    <MudPaper Class="pa-6 mt-4">
+        <EditForm Model="@_model" OnValidSubmit="@UpdateProjectAsync" OnInvalidSubmit="@OnInvalidSubmit">
+            <DataAnnotationsValidator />
+            <ValidationSummary />
+
+            <MudGrid>
+                <MudItem xs="12">
+                    <MudAlert Severity="Severity.Info" Class="mb-4">
+                        <MudText Typo="Typo.body2">
+                            <strong>项目信息:</strong>
+                        </MudText>
+                        <MudGrid>
+                            <MudItem xs="12" sm="6">
+                                <MudText Typo="Typo.body2">项目ID: @_project.Id</MudText>
+                                <MudText Typo="Typo.body2">创建时间: @_project.CreatedAt.ToString("yyyy-MM-dd HH:mm:ss")</MudText>
+                                <MudText Typo="Typo.body2">最后更新: @_project.UpdatedAt.ToString("yyyy-MM-dd HH:mm:ss")</MudText>
+                            </MudItem>
+                            <MudItem xs="12" sm="6">
+                                <MudText Typo="Typo.body2">当前状态: @GetStatusText(_project.Status)</MudText>
+                                <MudText Typo="Typo.body2">文档数量: @_project.Documents.Count</MudText>
+                                <MudText Typo="Typo.body2">项目文件夹: @_project.ProjectFolder</MudText>
+                            </MudItem>
+                        </MudGrid>
+                    </MudAlert>
+                </MudItem>
+
+                <MudItem xs="12">
+                    <MudTextField @bind-Value="_model.Name" Label="项目名称" Variant="Variant.Outlined" Required="true"
+                        MaxLength="200" Counter="200" HelperText="请输入项目的名称" For="@(() => _model.Name)" />
+                </MudItem>
+
+                <MudItem xs="12">
+                    <MudTextField @bind-Value="_model.Description" Label="项目描述" Variant="Variant.Outlined" Lines="4"
+                        MaxLength="1000" Counter="1000" HelperText="描述项目的目标和内容（可选）" For="@(() => _model.Description)" />
+                </MudItem>
+
+                <MudItem xs="12">
+                    <MudSelect T="ProjectStatus" @bind-Value="_model.Status" Label="项目状态" Variant="Variant.Outlined"
+                        HelperText="选择项目的当前状态">
+                        <MudSelectItem T="ProjectStatus" Value="@ProjectStatus.Created">已创建</MudSelectItem>
+                        <MudSelectItem T="ProjectStatus" Value="@ProjectStatus.Processing">处理中</MudSelectItem>
+                        <MudSelectItem T="ProjectStatus" Value="@ProjectStatus.Completed">已完成</MudSelectItem>
+                        <MudSelectItem T="ProjectStatus" Value="@ProjectStatus.Failed">失败</MudSelectItem>
+                        <MudSelectItem T="ProjectStatus" Value="@ProjectStatus.Cancelled">已取消</MudSelectItem>
+                    </MudSelect>
+
+                    @if (_project != null && _project.Status != _model.Status)
+                    {
+                        <MudAlert Severity="Severity.Warning" Dense="true" Class="mt-2">
+                            <MudText Typo="Typo.body2">
+                                <strong>注意:</strong> 您正在将项目状态从 "<strong>@GetStatusText(_project.Status)</strong>"
+                                更改为 "<strong>@GetStatusText(_model.Status)</strong>"。
+                            </MudText>
+                        </MudAlert>
+                    }
+                </MudItem>
+
+                <MudItem xs="12" Class="d-flex gap-4 flex-wrap">
+                    <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary"
+                        StartIcon="@Icons.Material.Filled.Save" Disabled="@_isSubmitting">
+                        @if (_isSubmitting)
+                        {
+                            <MudProgressCircular Class="ms-n1" Size="Size.Small" Indeterminate="true" />
+                            <MudText Class="ms-2">保存中...</MudText>
+                        }
+                        else
+                        {
+                            <MudText>保存更改</MudText>
+                        }
+                    </MudButton>
+
+                    <MudButton Variant="Variant.Outlined" Color="Color.Default" StartIcon="@Icons.Material.Filled.Cancel"
+                        OnClick="@Cancel" Disabled="@_isSubmitting">
+                        取消
+                    </MudButton>
+
+                    <MudButton Variant="Variant.Outlined" Color="Color.Info" StartIcon="@Icons.Material.Filled.Visibility"
+                        OnClick="@(() => Navigation.NavigateTo($"/projects/{ProjectId}"))" Disabled="@_isSubmitting">
+                        查看详情
+                    </MudButton>
+
+                    <MudButton Variant="Variant.Outlined" Color="Color.Secondary" StartIcon="@Icons.Material.Filled.List"
+                        OnClick="@(() => Navigation.NavigateTo("/projects"))" Disabled="@_isSubmitting">
+                        返回列表
+                    </MudButton>
+
+                    <MudButton Variant="Variant.Text" Color="Color.Warning" StartIcon="@Icons.Material.Filled.Restore"
+                        OnClick="@ResetForm" Disabled="@_isSubmitting">
+                        重置表单
+                    </MudButton>
+                </MudItem>
+            </MudGrid>
+        </EditForm>
+    </MudPaper>
+}
+
+@code {
+    [Parameter] public string ProjectId { get; set; } = string.Empty;
+
+    private PdfProject? _project;
+    private EditProjectModel _model = new();
+    private bool _isLoading = true;
+    private bool _isSubmitting = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadProject();
+    }
+
+    private async Task LoadProject()
+    {
+        try
+        {
+            _isLoading = true;
+            var userId = GetCurrentUserId();
+            _project = await ProjectService.GetProjectByIdAsync(ProjectId, userId);
+
+            if (_project != null)
+            {
+                _model = new EditProjectModel
+                {
+                    Name = _project.Name,
+                    Description = _project.Description,
+                    Status = _project.Status
+                };
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error loading project {ProjectId}", ProjectId);
+            Snackbar.Add($"加载项目失败: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private string GetCurrentUserId()
+    {
+        var authState = Task.Run(async () => await AuthenticationStateTask).Result;
+        return authState.User?.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? string.Empty;
+    }
+
+    private void OnInvalidSubmit()
+    {
+        Snackbar.Add("请检查表单输入是否正确", Severity.Warning);
+    }
+
+    private void ResetForm()
+    {
+        if (_project != null)
+        {
+            _model = new EditProjectModel
+            {
+                Name = _project.Name,
+                Description = _project.Description,
+                Status = _project.Status
+            };
+            Snackbar.Add("表单已重置", Severity.Info);
+        }
+    }    private async Task UpdateProjectAsync()
+    {
+        try
+        {
+            _isSubmitting = true;
+            var userId = GetCurrentUserId();
+
+            // 更新项目基本信息
+            var success = await ProjectService.UpdateProjectAsync(ProjectId, _model.Name, _model.Description, userId);
+
+            if (success)
+            {
+                // 如果状态发生了变化，单独更新状态
+                if (_project!.Status != _model.Status)
+                {
+                    await ProjectService.UpdateProjectStatusAsync(ProjectId, _model.Status, userId);
+                }
+
+                Snackbar.Add("项目更新成功！", Severity.Success);
+                Navigation.NavigateTo($"/projects/{ProjectId}");
+            }
+            else
+            {
+                Snackbar.Add("项目更新失败", Severity.Error);
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error updating project {ProjectId}", ProjectId);
+            Snackbar.Add($"更新项目失败: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _isSubmitting = false;
+        }
+    }
+
+    private void Cancel()
+    {
+        Navigation.NavigateTo($"/projects/{ProjectId}");
+    }
+
+    private string GetStatusText(ProjectStatus status) => status switch
+    {
+        ProjectStatus.Created => "已创建",
+        ProjectStatus.Processing => "处理中",
+        ProjectStatus.Completed => "已完成",
+        ProjectStatus.Failed => "失败",
+        ProjectStatus.Cancelled => "已取消",
+        _ => "未知"
+    };
+
+    [CascadingParameter]
+    private Task<AuthenticationState> AuthenticationStateTask { get; set; } = default!;
+
+    public class EditProjectModel
+    {
+        [Required(ErrorMessage = "项目名称不能为空")]
+        [StringLength(200, ErrorMessage = "项目名称长度不能超过200个字符")]
+        public string Name { get; set; } = string.Empty;
+
+        [StringLength(1000, ErrorMessage = "项目描述长度不能超过1000个字符")]
+        public string? Description { get; set; }
+
+        public ProjectStatus Status { get; set; } = ProjectStatus.Created;
+    }
+}

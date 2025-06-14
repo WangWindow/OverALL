@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
-using OverALL.Data.Models;
+using OverALL.Models;
 
 namespace OverALL.Data;
 

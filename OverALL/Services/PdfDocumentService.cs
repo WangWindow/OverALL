@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Hosting;
 using OverALL.Data;
-using OverALL.Data.Models;
+using OverALL.Models;
 
 namespace OverALL.Services;
 
